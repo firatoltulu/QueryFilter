@@ -5,7 +5,7 @@ QueryFilter, OData benzeri LINQ veya EntityFramework üzerinde çalışabilen so
 
 ## Özellikler (v1.0.0)
 --
-* `IQueryable` veya `IEnurable` üzerinde filtreleme veya gruplama yapabilirsiniz
+* `IQueryable` veya `IEnumerable` üzerinde filtreleme veya gruplama yapabilirsiniz
 * Desteklenen Operatörler
   * in
   * equal
