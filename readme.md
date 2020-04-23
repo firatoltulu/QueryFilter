@@ -42,7 +42,7 @@ var studentList =  new List<StudentModel> {
 ```csharp
     
      var queryFilterModel = QueryFilterModel.Parse("$filter=Name~eq~'Nancy'");
-     var result = studentModels.ApplyQueryFilter(queryFilterModel);
+     var result = studentModels.QueryFilter(queryFilterModel);
 
    //Nancy Fuller         
 ```
@@ -55,7 +55,7 @@ Bir sıranın başından itibaren belirtilen sayıda bitişik öğeyi döndürü
 ```csharp
     
      var queryFilterModel = QueryFilterModel.Parse("$filter=Age~gt~20&$top=1");
-     var result = studentModels.ApplyQueryFilter(queryFilterModel);
+     var result = studentModels.QueryFilter(queryFilterModel);
 
    //Nancy Fuller         
 ```
@@ -69,7 +69,7 @@ Bir dizide belirtilen sayıda öğeyi atlar ve ardından kalan öğeleri döndü
 ```csharp
     
      var queryFilterModel = QueryFilterModel.Parse("$filter=Age~gt~20&$top=1&$skip=1");
-     var result = studentModels.ApplyQueryFilter(queryFilterModel);
+     var result = studentModels.QueryFilter(queryFilterModel);
 
    //Andrew Leverling         
 ```
