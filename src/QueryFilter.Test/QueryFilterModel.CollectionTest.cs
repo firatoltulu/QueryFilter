@@ -26,7 +26,7 @@ namespace QueryFilter.Test
         public void StringMember_Filtered_Success(IEnumerable<StudentModel> studentModels)
         {
             var queryFilterModel = QueryFilterModel.Parse("$filter=Name~eq~'Nancy'");
-            var result = studentModels.ApplyQueryFilter(queryFilterModel);
+            var result = studentModels.QueryFilter(queryFilterModel);
             Assert.AreEqual(result.Items.FirstOrDefault().Name, "Nancy");
         }
 
@@ -35,7 +35,7 @@ namespace QueryFilter.Test
         public void NumberMember_Filtered_Success(IEnumerable<StudentModel> studentModels)
         {
             var queryFilterModel = QueryFilterModel.Parse("$filter=Age~gt~32");
-            var result = studentModels.ApplyQueryFilter(queryFilterModel);
+            var result = studentModels.QueryFilter(queryFilterModel);
             Assert.AreEqual(result.TotalCount, 2);
         }
 

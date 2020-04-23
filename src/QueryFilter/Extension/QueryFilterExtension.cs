@@ -8,7 +8,7 @@ namespace QueryFilter
     using QueryFilter;
     using System.Linq.Dynamic.Core;
 
-    public static class ApplyQueryFilterExtension
+    public static class QueryFilterExtension
     {
         private static IQueryable setSorting<TEntity>(QueryFilterModel queryFilterCommand, IQueryable query)
         {
@@ -30,7 +30,7 @@ namespace QueryFilter
             return query;
         }
 
-        public static PagedList<TEntity> ApplyQueryFilter<TEntity>(this IEnumerable<TEntity> entities, QueryFilterModel queryFilterCommand)
+        public static PagedList<TEntity>QueryFilter<TEntity>(this IEnumerable<TEntity> entities, QueryFilterModel queryFilterCommand)
             where TEntity : class
         {
             int totalCount = 0;
@@ -77,7 +77,14 @@ namespace QueryFilter
             return new PagedList<TEntity>(result, totalCount);
         }
 
-        public static PagedList<TResult> ApplyQueryFilter<TSource, TResult>(
+        public static PagedList<TEntity> QueryFilter<TEntity>(this IEnumerable<TEntity> entities, string queryFilter)
+            where TEntity : class
+        {
+            return entities.QueryFilter(QueryFilterModel.Parse(queryFilter));
+        }
+
+
+        public static PagedList<TResult> QueryFilter<TSource, TResult>(
             this IEnumerable<TSource> entities,
             Func<TSource, TResult> selector,
             QueryFilterModel queryFilterCommand
@@ -85,7 +92,7 @@ namespace QueryFilter
             where TResult : class
             where TSource : class
         {
-            var result = entities.ApplyQueryFilter(queryFilterCommand);
+            var result = entities.QueryFilter(queryFilterCommand);
             var convertedResult = result.Items.Select(selector).ToList();
             return new PagedList<TResult>(convertedResult, result.TotalCount);
         }

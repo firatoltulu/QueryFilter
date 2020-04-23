@@ -1,11 +1,10 @@
 using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 
 namespace QueryFilter
 {
-    public static class QueryFilterExtension
+    public static class ExpresionHelper
     {
         public static Expression<Func<T, bool>> AndAlso<T>(
             this Expression<Func<T, bool>> expr1,
@@ -37,31 +36,6 @@ namespace QueryFilter
             entityQueryDto.Sorts = string.Join(" ,", queryFilter.SortDescriptors.Select(sort => sort.ToString()));
 
             return entityQueryDto;
-        }
-
-        public static PagedList<T> ToList<T>(this IList<T> source, QueryFilterModel queryFilter) where T : class
-        {
-            return ToList<T>(source.AsQueryable(), queryFilter);
-        }
-
-        public static PagedList<T> ToList<T>(this IQueryable<T> source, QueryFilterModel queryFilter) where T : class
-        {
-            Expression<Func<T, bool>> expression = (e => true);
-
-            if (queryFilter.FilterDescriptors.Count > 0)
-            {
-                expression = expression.AndAlso(ExpressionMethodHelper.GetExpression<T>(queryFilter.FilterDescriptors));
-            }
-
-            if (queryFilter.SortDescriptors.Count > 0)
-                source = source.ApplySort(queryFilter.SortDescriptors);
-
-            var newSource = source.Where(expression);
-            var totalCount = newSource.Count();
-
-            newSource = newSource.Skip(queryFilter.Skip).Take(queryFilter.Top);
-
-            return new PagedList<T>(newSource.ToList(), totalCount);
         }
 
         private class ReplaceExpressionVisitor
