@@ -88,9 +88,9 @@ namespace QueryFilter
             Expression member = GetMemberExpression(param, propertyName ?? statement.Member);
             if (statement.Operator != FilterOperator.IsContainedIn)
             {
-                // var result = Convert.ChangeType(statement.Value, member.Type)
-                Expression constant = Expression.Constant(TypeDescriptor.GetConverter(member.Type).ConvertFrom(statement.Value));
-                //Expression constant = Expression.Constant(Convert.ChangeType(statement.Value, member.Type));
+                var convertedValue = statement.Value.Convert(member.Type);
+                Expression constant = Expression.Constant(convertedValue);
+
                 if (member.Type == typeof(string))
                 {
                     var trimMemberCall = Expression.Call(member, trimMethod);
@@ -101,7 +101,8 @@ namespace QueryFilter
 
                 return Expressions[statement.Operator].Invoke(member, constant);
             }
-            else {
+            else
+            {
                 Expression constant = Expression.Constant(statement.Value);
                 return Expressions[statement.Operator].Invoke(member, constant);
             }
