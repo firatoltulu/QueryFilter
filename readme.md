@@ -1,7 +1,8 @@
 #QueryFilter
 
-QueryFilter, OData benzeri LINQ veya EntityFramework üzerinde çalışabilen sorgu kümelerine filtreleme veya gruplama işlemi yapabileceğiniz bir araçtır. 
+QueryFilter, OData benzeri LINQ veya EntityFramework üzerinde çalışabilen sorgu kümelerine filtreleme veya gruplama işlemi yapabileceğiniz bir kütüphanedir. 
 
+Uzun zamandır kendi projelerimde kullandığım, TelerikMVCExtension kütüphanesinde yer alan ve üzerinde değişiklikler yaptığım bir projedir. Topluluğun desteği ile daha kullanım biçimine gelebilir.
 
 
 ## Özellikler (v1.0.0)
