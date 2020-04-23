@@ -16,7 +16,7 @@ namespace QueryFilter
         private static readonly string[] ComparisonOperators = new[] { "eq", "ne", "lt", "le", "gt", "ge" };
         private static readonly string[] LogicalOperators = new[] { "and", "or", "not" };
         private static readonly string[] Booleans = new[] { "true", "false" };
-        private static readonly string[] Functions = new[] { "substringof", "endswith", "startswith", "in", "nesubstringof" };
+        private static readonly string[] Functions = new[] { "contains", "endswith", "startswith", "in", "necontains" };
 
         private int currentCharacterIndex;
         private readonly string input;

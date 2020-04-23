@@ -18,7 +18,8 @@ namespace QueryFilter
             { "gt", FilterOperator.IsGreaterThan },
             { "ge", FilterOperator.IsGreaterThanOrEqualTo },
             { "startswith", FilterOperator.StartsWith },
-            { "substringof", FilterOperator.Contains },
+            { "contains", FilterOperator.Contains },
+            { "necontains", FilterOperator.NotContains },
             { "endswith", FilterOperator.EndsWith },
             { "in", FilterOperator.IsContainedIn }
         };
@@ -32,8 +33,8 @@ namespace QueryFilter
             { FilterOperator.IsGreaterThan, "gt" },
             { FilterOperator.IsGreaterThanOrEqualTo, "ge" },
             { FilterOperator.StartsWith, "startswith" },
-            { FilterOperator.Contains, "substringof" },
-            { FilterOperator.NotContains, "nesubstringof" },
+            { FilterOperator.Contains, "contains" },
+            { FilterOperator.NotContains, "necontains" },
             { FilterOperator.EndsWith, "endswith" },
             { FilterOperator.IsContainedIn, "in" }
         };
