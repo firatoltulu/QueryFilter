@@ -7,5 +7,8 @@
         public string LastName { get; set; }
 
         public short Age { get; set; }
+
+        public object NullValue { get; set; }
+
     }
 }

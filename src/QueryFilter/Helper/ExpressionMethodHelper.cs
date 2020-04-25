@@ -16,6 +16,8 @@ namespace QueryFilter
         private static MethodInfo toLowerMethod = typeof(string).GetMethod("ToLower", new Type[0]);
         private static MethodInfo startsWithMethod = typeof(string).GetMethod("StartsWith", new[] { typeof(string) });
         private static MethodInfo endsWithMethod = typeof(string).GetMethod("EndsWith", new[] { typeof(string) });
+        private static MethodInfo isNullOrEmpty = typeof(string).GetMethod("IsNullOrEmpty", new[] { typeof(string) });
+
 
         private static readonly Dictionary<FilterOperator, Func<Expression, Expression, Expression>> Expressions;
 
@@ -93,10 +95,16 @@ namespace QueryFilter
 
                 if (member.Type == typeof(string))
                 {
-                    var trimMemberCall = Expression.Call(member, trimMethod);
-                    member = Expression.Call(trimMemberCall, toLowerMethod);
-                    var trimConstantCall = Expression.Call(constant, trimMethod);
-                    constant = Expression.Call(trimConstantCall, toLowerMethod);
+                    if (convertedValue != null)
+                    {
+                        var trimMemberCall = Expression.Call(member, trimMethod);
+                        member = Expression.Call(trimMemberCall, toLowerMethod);
+
+                        var trimConstantCall = Expression.Call(constant, trimMethod);
+                        constant = Expression.Call(trimConstantCall, toLowerMethod);
+                    }
+                    else
+                        constant = Expression.Constant(string.Empty);
                 }
 
                 return Expressions[statement.Operator].Invoke(member, constant);

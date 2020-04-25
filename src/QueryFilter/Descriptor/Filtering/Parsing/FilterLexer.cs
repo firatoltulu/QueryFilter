@@ -13,6 +13,7 @@ namespace QueryFilter
     public class FilterLexer
     {
         private const char Separator = '~';
+
         private static readonly string[] ComparisonOperators = new[] { "eq", "ne", "lt", "le", "gt", "ge" };
         private static readonly string[] LogicalOperators = new[] { "and", "or", "not" };
         private static readonly string[] Booleans = new[] { "true", "false" };
@@ -84,6 +85,11 @@ namespace QueryFilter
             return Array.IndexOf(Booleans, value) > -1;
         }
 
+        private static bool IsNull(string value)
+        {
+            return value.ToLowerInvariant().Equals("null");
+        }
+
         private static bool IsFunction(string value)
         {
             return Array.IndexOf(Functions, value) > -1;
@@ -97,6 +103,11 @@ namespace QueryFilter
         private static FilterToken Boolean(string result)
         {
             return new FilterToken { TokenType = FilterTokenType.Boolean, Value = result };
+        }
+
+        private static FilterToken NullValue(string result)
+        {
+            return new FilterToken { TokenType = FilterTokenType.Null, Value = result };
         }
 
         private static FilterToken RightParenthesis(string result)
@@ -126,6 +137,7 @@ namespace QueryFilter
 
             return new FilterToken { TokenType = FilterTokenType.DateTime, Value = result };
         }
+
         private FilterToken IgnoreCaseString(string result)
         {
             TryParseString(out result);
@@ -187,6 +199,11 @@ namespace QueryFilter
             if (IsBoolean(result))
             {
                 return Boolean(result);
+            }
+
+            if (IsNull(result))
+            {
+                return NullValue(result);
             }
 
             if (IsFunction(result))

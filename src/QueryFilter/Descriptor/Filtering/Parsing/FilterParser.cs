@@ -99,6 +99,11 @@ namespace QueryFilter
                 return ParseBoolean();
             }
 
+            if (Is(FilterTokenType.Null))
+            {
+                return ParseNull();
+            }
+
             if (Is(FilterTokenType.DateTime))
             {
                 return ParseDateTimeExpression();
@@ -203,6 +208,16 @@ namespace QueryFilter
                        {
                            Value = Convert.ToBoolean(stringToken.Value)
                        };
+        }
+
+        private IFilterNode ParseNull()
+        {
+            FilterToken stringToken = Expect(FilterTokenType.Null);
+
+            return new BooleanNode
+            {
+                Value = null
+            };
         }
 
         private IFilterNode ParseNumberExpression()

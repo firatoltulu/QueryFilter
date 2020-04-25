@@ -18,6 +18,7 @@ namespace QueryFilter
             }
             else
             {
+                
                 if (queryFilterCommand.GroupDescriptors.Count == 0)
                 {
                     var propertyName = typeof(TEntity).GetProperties()[0].Name;
