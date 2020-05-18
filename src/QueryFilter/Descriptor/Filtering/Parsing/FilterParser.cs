@@ -127,6 +127,10 @@ namespace QueryFilter
             {
                 return ParseStringExpressionUseIgnoreCase();
             }
+            if (Is(FilterTokenType.LeftSquareBracket))
+            {
+                return ParseArrayExpression();
+            }
             throw new FilterParserException("Expected primaryExpression");
         }
 
@@ -200,6 +204,30 @@ namespace QueryFilter
                 IgnoreCaseSensitive = true
             };
         }
+
+        private IFilterNode ParseArrayExpression()
+        {
+            FilterToken stringToken = Expect(FilterTokenType.LeftSquareBracket);
+
+            List<object> list = new List<object>();
+
+            list.Add(Expression());
+
+            while (Is(FilterTokenType.Comma))
+            {
+                Expect(FilterTokenType.Comma);
+                list.Add(Expression());
+            }
+
+            Expect(FilterTokenType.RightSquareBracket);
+
+            return new ArrayNode
+            {
+                Value = list.ToArray()
+            };
+
+        }
+
         private IFilterNode ParseBoolean()
         {
             FilterToken stringToken = Expect(FilterTokenType.Boolean);
@@ -269,14 +297,16 @@ namespace QueryFilter
                                        FilterOperator = function.ToFilterOperator()
                                    };
 
-            Expect(FilterTokenType.LeftParenthesis);
+            Expect(FilterTokenType.LeftSquareBracket);
             functionNode.Arguments.Add(Expression());
-            while (Is(FilterTokenType.Comma))
+
+            /*while (Is(FilterTokenType.Comma))
             {
                 Expect(FilterTokenType.Comma);
                 functionNode.Arguments.Add(Expression());
             }
-            Expect(FilterTokenType.RightParenthesis);
+            Expect(FilterTokenType.RightSquareBracket); */
+
             return functionNode;
         }
 

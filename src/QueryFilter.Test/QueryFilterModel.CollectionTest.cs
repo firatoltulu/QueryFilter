@@ -32,7 +32,7 @@ namespace QueryFilter.Test
         {
             var queryFilterModel = QueryFilterModel.Parse("$filter=Age~gt~32");
             var result = studentModels.QueryFilter(queryFilterModel);
-            Assert.AreEqual(result.TotalCount, 2);
+            Assert.AreEqual(result.TotalCount, 3);
         }
 
         [TestCaseSource("_studentLists")]
@@ -52,11 +52,19 @@ namespace QueryFilter.Test
         }
 
         [TestCaseSource("_studentLists")]
-        public void NumberMember_Filtered_Not_Null_Success(IEnumerable<StudentModel> studentModels)
+        public void NumberMember_FilteredIn_Not_Null_Success(IEnumerable<StudentModel> studentModels)
         {
-            var queryFilterModel = QueryFilterModel.Parse("$filter=NullValue~ne~null");
+            var queryFilterModel = QueryFilterModel.Parse("$filter=Age~in~[32]");
             var result = studentModels.QueryFilter(queryFilterModel);
-            Assert.AreEqual(result.TotalCount, 3);
+            Assert.AreEqual(result.TotalCount, 1);
+        }
+
+        [TestCaseSource("_studentLists")]
+        public void StringMember_FilteredIn_Not_Null_Success(IEnumerable<StudentModel> studentModels)
+        {
+            var queryFilterModel = QueryFilterModel.Parse("$filter=Name~in~['Nancy']");
+            var result = studentModels.QueryFilter(queryFilterModel);
+            Assert.AreEqual(result.TotalCount, 1);
         }
     }
 }

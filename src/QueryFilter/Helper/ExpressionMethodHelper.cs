@@ -145,7 +145,7 @@ namespace QueryFilter
             return Expression.Property(param, propertyName);
         }
 
-        private static List<ConstantExpression> GetConstants(Type type, string value, bool isCollection)
+        private static List<ConstantExpression> GetConstants(Type type, object value, bool isCollection)
         {
             if (type == typeof(DateTime))
             {
@@ -153,7 +153,7 @@ namespace QueryFilter
                 if (isCollection)
                 {
                     var vals =
-                        value.Split(new[] { ",", "[", "]", "\r\n" }, StringSplitOptions.RemoveEmptyEntries)
+                        value.ToString().Split(new[] { ",", "[", "]", "\r\n" }, StringSplitOptions.RemoveEmptyEntries)
                             .Where(p => !string.IsNullOrWhiteSpace(p))
                             .Select(
                                 p =>
@@ -169,7 +169,7 @@ namespace QueryFilter
                 {
                     return new List<ConstantExpression>()
                     {
-                        Expression.Constant(DateTime.TryParse(value.Trim(), CultureInfo.InvariantCulture,
+                        Expression.Constant(DateTime.TryParse(value.ToString().Trim(), CultureInfo.InvariantCulture,
                             DateTimeStyles.AdjustToUniversal, out tDate)
                             ? (DateTime?)
                                 tDate
@@ -181,12 +181,8 @@ namespace QueryFilter
             {
                 if (isCollection)
                 {
-                    var tc = TypeDescriptor.GetConverter(type);
-                    var vals =
-                        value.Split(new[] { ",", "[", "]", "\r\n" }, StringSplitOptions.RemoveEmptyEntries)
-                            .Where(p => !string.IsNullOrWhiteSpace(p))
-                            .Select(p => tc.ConvertFromString(p.Trim())).Select(p =>
-                                Expression.Constant(p, type));
+                    var vals = (value as object[]).Select(p =>
+                                Expression.Constant(p.Convert(type), type));
                     return vals.ToList();
                 }
                 else
@@ -194,7 +190,7 @@ namespace QueryFilter
                     var tc = TypeDescriptor.GetConverter(type);
                     return new List<ConstantExpression>()
                 {
-                    Expression.Constant(tc.ConvertFromString(value.Trim()))
+                    Expression.Constant(tc.ConvertFromString(value.ToString().Trim()))
                 };
                 }
             }
@@ -204,7 +200,7 @@ namespace QueryFilter
         {
             var type = propertyExp.Type;
             var value = constantExpression as ConstantExpression;
-            var someValues = GetConstants(type, value.Value.ToString(), true);
+            var someValues = GetConstants(type, value.Value, true);
             var nullCheck = GetNullCheckExpression(propertyExp);
 
             Expression exOut;
@@ -240,8 +236,12 @@ namespace QueryFilter
             {
                 if (type == typeof(string))
                 {
-                    exOut = Expression.Call(propertyExp, typeof(string).GetMethod("ToLower", Type.EmptyTypes));
-                    exOut = Expression.Equal(exOut, someValues.First());
+                    exOut = Expression.Call(propertyExp, toLowerMethod);
+
+                    var trimMemberCall = Expression.Call(someValues.First(), trimMethod);
+                    var rightEx = Expression.Call(trimMemberCall, toLowerMethod);
+
+                    exOut = Expression.Equal(exOut, rightEx);
                 }
                 else
                 {

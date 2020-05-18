@@ -6,6 +6,7 @@
 namespace QueryFilter
 {
     using System.Collections.Generic;
+    using System.Linq;
 
     public class FilterNodeVisitor : IFilterNodeVisitor
     {
@@ -85,7 +86,16 @@ namespace QueryFilter
 
         public void Visit(IValueNode valueNode)
         {
+
             ((FilterDescriptor)CurrentDescriptor).Value = valueNode.Value;
+        }
+
+        public void VisitArray(IValueNode valueNode)
+        {
+            ((FilterDescriptor)CurrentDescriptor).Value = (valueNode.Value as object[]).Select(x => {
+                IValueNode convertedValue = (IValueNode)x;
+                return convertedValue.Value;
+            }).ToArray();
         }
     }
 }

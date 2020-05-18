@@ -57,6 +57,14 @@ namespace QueryFilter
                 {
                     tokens.Add(RightParenthesis(result));
                 }
+                else if (TryParseCharacter(out result, '['))
+                {
+                    tokens.Add(LeftSquareBracket(result));
+                }
+                else if (TryParseCharacter(out result, ']'))
+                {
+                    tokens.Add(RightSquareBracket(result));
+                }
                 else if (TryParseCharacter(out result, ','))
                 {
                     tokens.Add(Comma(result));
@@ -118,6 +126,16 @@ namespace QueryFilter
         private static FilterToken LeftParenthesis(string result)
         {
             return new FilterToken { TokenType = FilterTokenType.LeftParenthesis, Value = result };
+        }
+
+        private static FilterToken LeftSquareBracket(string result)
+        {
+            return new FilterToken { TokenType = FilterTokenType.LeftSquareBracket, Value = result };
+        }
+
+        private static FilterToken RightSquareBracket(string result)
+        {
+            return new FilterToken { TokenType = FilterTokenType.RightSquareBracket, Value = result };
         }
 
         private static FilterToken String(string result)

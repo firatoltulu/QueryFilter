@@ -16,5 +16,6 @@ namespace QueryFilter
         void StartVisit(IOperatorNode operatorNode);
         
         void EndVisit();
+        void VisitArray(IValueNode valueNode);
     }
 }

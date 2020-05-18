@@ -21,6 +21,8 @@ namespace QueryFilter
         DateTime,
         LeftParenthesis,
         RightParenthesis,
+        LeftSquareBracket,
+        RightSquareBracket,
         Comma
     }
 }
