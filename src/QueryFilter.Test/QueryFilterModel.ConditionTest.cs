@@ -1,4 +1,5 @@
 ﻿using NUnit.Framework;
+using System;
 
 namespace QueryFilter.Test
 {
@@ -33,6 +34,17 @@ namespace QueryFilter.Test
 
             Assert.AreEqual(parsed.Value, null);
             Assert.AreEqual(parsed.Member, "NullMember");
+        }
+
+        [TestCase("$filter=Status~eq~'Success'~and~ExpireDate~lt~datetime'2020-06-10'")]
+        public void DateMemberParsing_Success(string queryFilter)
+        {
+            var queryFilterModel = QueryFilterModel.Parse(queryFilter);
+
+            var parsed = queryFilterModel.FilterDescriptors[1] as FilterDescriptor;
+
+            Assert.IsTrue(parsed.Value is DateTime);
+            Assert.AreEqual(parsed.Member, "ExpireDate");
         }
     }
 }
