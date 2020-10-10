@@ -1,5 +1,6 @@
 ﻿using NUnit.Framework;
 using System;
+using System.Linq;
 
 namespace QueryFilter.Test
 {
@@ -40,8 +41,14 @@ namespace QueryFilter.Test
         public void DateMemberParsing_Success(string queryFilter)
         {
             var queryFilterModel = QueryFilterModel.Parse(queryFilter);
-
-            var parsed = queryFilterModel.FilterDescriptors[1] as FilterDescriptor;
+            FilterDescriptor parsed;
+            if (queryFilterModel.FilterDescriptors.FirstOrDefault() is CompositeFilterDescriptor)
+            {
+                var compositeQuery = (CompositeFilterDescriptor)queryFilterModel.FilterDescriptors.FirstOrDefault();
+                parsed = (FilterDescriptor)compositeQuery.FilterDescriptors.LastOrDefault();
+            }
+            else
+                parsed = (FilterDescriptor)queryFilterModel.FilterDescriptors.FirstOrDefault();
 
             Assert.IsTrue(parsed.Value is DateTime);
             Assert.AreEqual(parsed.Member, "ExpireDate");
