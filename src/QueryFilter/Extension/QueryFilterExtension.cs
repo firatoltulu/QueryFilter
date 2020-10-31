@@ -4,7 +4,7 @@ using System.Linq;
 
 namespace QueryFilter
 {
-    using Omu.ValueInjecter;
+    using Newtonsoft.Json.Linq;
     using QueryFilter;
     using System.Linq.Dynamic.Core;
 
@@ -64,7 +64,9 @@ namespace QueryFilter
                 result = transformToEntity.Select((iitem) =>
                 {
                     var obj = Activator.CreateInstance<TEntity>();
-                    return (TEntity)obj.InjectFrom(iitem);
+
+                    //maybe another 
+                    return JObject.FromObject(iitem).ToObject< TEntity>();
                 }).ToList();
             }
             else
