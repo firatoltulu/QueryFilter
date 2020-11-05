@@ -271,7 +271,7 @@ namespace QueryFilter
         private IFilterNode ParseDateTimeExpression()
         {
             FilterToken dateTime = Expect(FilterTokenType.DateTime);
-            var acceptDates = new string[] { "dd.MM.yyyy", "dd.MM.yyyy HH:mm", "dd.MM.yyyy HH:mm:ss", "yyyy-MM-dd", "yyyy-MM-ddTHH:mm:ss" };
+            var acceptDates = new string[] { "dd.MM.yyyy", "dd.MM.yyyy HH:mm", "dd.MM.yyyy HH:mm:ss", "yyyy-MM-dd", "yyyy-MM-ddTHH:mm:ss", "yyyy-MM-ddTHH:mm:ssZ" };
             return new DateTimeNode
                        {
                            Value = DateTime.ParseExact(dateTime.Value, acceptDates, null, DateTimeStyles.None)
