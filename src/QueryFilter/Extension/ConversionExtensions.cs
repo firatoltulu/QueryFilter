@@ -2,6 +2,7 @@
 using System.Collections;
 using System.ComponentModel;
 using System.Globalization;
+using System.Linq.Expressions;
 
 namespace QueryFilter
 {
@@ -102,11 +103,15 @@ namespace QueryFilter
             }
 
             TypeConverter fromConverter = TypeDescriptor.GetConverter(to);
-
             if (fromConverter != null && fromConverter.CanConvertFrom(fromType))
             {
                 return fromConverter.ConvertFrom(null, culture, value);
             }
+
+            //Modified for Nullable fields
+            //https://stackoverflow.com/questions/42768023/getting-error-the-binary-operator-equal-is-not-defined-for-the-types-system-g
+            
+            return toConverter.ConvertFromInvariantString(null,value.ToString()); // 3
 
             throw new System.Exception("invalid convert types");
         }

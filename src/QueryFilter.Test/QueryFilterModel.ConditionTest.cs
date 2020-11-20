@@ -37,7 +37,7 @@ namespace QueryFilter.Test
             Assert.AreEqual(parsed.Member, "NullMember");
         }
 
-        [TestCase("$filter=Status~eq~'Success'~and~ExpireDate~lt~datetime'2020-06-10'")]
+        [TestCase("$filter=Status~eq~'Success'~and~ExpireDate~lt~datetime'2020-06-17'")]
         public void DateMemberParsing_Success(string queryFilter)
         {
             var queryFilterModel = QueryFilterModel.Parse(queryFilter);

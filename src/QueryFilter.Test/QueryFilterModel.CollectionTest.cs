@@ -1,5 +1,6 @@
 ﻿using NUnit.Framework;
 using QueryFilter.Test.Model;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -12,9 +13,9 @@ namespace QueryFilter.Test
         {
             new object[] {
                 new List<StudentModel> {
-                new StudentModel { Name="Nancy",LastName="Fuller",Age=35, NullValue =1 },
-                new StudentModel { Name="Andrew",LastName="Leverling",Age=33, NullValue=2 },
-                new StudentModel { Name="Janet",LastName="Peacock",Age=32 , NullValue=null},
+                new StudentModel { Name="Nancy",LastName="Fuller",Age=35, NullValue =1, Birth=new DateTime(2020,11,20) },
+                new StudentModel { Name="Andrew",LastName="Leverling",Age=33, NullValue=2,  Start=new DateTime(2020,11,20) },
+                new StudentModel { Name="Janet",LastName="Peacock",Age=32 , NullValue=null, Total=1},
                 new StudentModel { Name=string.Empty,LastName=string.Empty,Age=93,NullValue=3 }
              }}
         };
@@ -22,9 +23,25 @@ namespace QueryFilter.Test
         [TestCaseSource("_studentLists")]
         public void StringMember_Filtered_Success(IEnumerable<StudentModel> studentModels)
         {
-            var queryFilterModel = QueryFilterModel.Parse("$filter=Name~eq~'Nancy'");
+            var queryFilterModel = QueryFilterModel.Parse("$filter=Name~eq~'NancyI'~and~Birth~lt~datetime'2020-12-17'");
             var result = studentModels.QueryFilter(queryFilterModel);
             Assert.AreEqual(result.Items.FirstOrDefault().Name, "Nancy");
+        }
+
+        [TestCaseSource("_studentLists")]
+        public void NullIntMember_Filtered_Success(IEnumerable<StudentModel> studentModels)
+        {
+            var queryFilterModel = QueryFilterModel.Parse("$filter=Total~eq~1");
+            var result = studentModels.QueryFilter(queryFilterModel);
+            Assert.AreEqual(result.TotalCount, 1);
+        }
+
+        [TestCaseSource("_studentLists")]
+        public void NullDatetimeMember_Filtered_Success(IEnumerable<StudentModel> studentModels)
+        {
+            var queryFilterModel = QueryFilterModel.Parse("$filter=Start~eq~datetime'2020-11-20'");
+            var result = studentModels.QueryFilter(queryFilterModel);
+            Assert.AreEqual(result.TotalCount, 1);
         }
 
         [TestCaseSource("_studentLists")]

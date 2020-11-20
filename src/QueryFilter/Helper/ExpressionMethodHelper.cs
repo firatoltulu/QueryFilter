@@ -18,7 +18,6 @@ namespace QueryFilter
         private static MethodInfo endsWithMethod = typeof(string).GetMethod("EndsWith", new[] { typeof(string) });
         private static MethodInfo isNullOrEmpty = typeof(string).GetMethod("IsNullOrEmpty", new[] { typeof(string) });
 
-
         private static readonly Dictionary<FilterOperator, Func<Expression, Expression, Expression>> Expressions;
 
         static ExpressionMethodHelper()
@@ -86,12 +85,11 @@ namespace QueryFilter
 
         private static Expression GetExpression(ParameterExpression param, FilterDescriptor statement, string propertyName = null)
         {
-
             Expression member = GetMemberExpression(param, propertyName ?? statement.Member);
             if (statement.Operator != FilterOperator.IsContainedIn)
             {
                 var convertedValue = statement.Value.Convert(member.Type);
-                Expression constant = Expression.Constant(convertedValue);
+                Expression constant = Expression.Convert(Expression.Constant(convertedValue), member.Type);
 
                 if (member.Type == typeof(string))
                 {
@@ -267,6 +265,7 @@ namespace QueryFilter
         {
             return Expression.Not(In(propertyExp, constantExpression));
         }
+
         private static object GetDefaultValue(this Type type)
         {
             return type.GetTypeInfo().IsValueType ? Activator.CreateInstance(type) : null;

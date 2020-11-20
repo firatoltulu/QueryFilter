@@ -1,4 +1,6 @@
-﻿namespace QueryFilter.Test.Model
+﻿using System;
+
+namespace QueryFilter.Test.Model
 {
     public class StudentModel
     {
@@ -9,6 +11,14 @@
         public short Age { get; set; }
 
         public object NullValue { get; set; }
+
+        public DateTime? Birth { get; set; }
+
+        public DateTime Start { get; set; }
+
+
+        public int? Total { get; set; }
+
 
     }
 }
