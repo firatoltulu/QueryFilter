@@ -17,7 +17,6 @@ jobs:
       uses: actions/setup-dotnet@v1
       with:
         dotnet-version: 3.1.301
-        source-url: https://api.nuget.org/v3/index.json
     - name: Install dependencies
       run: dotnet restore ./src
     - name: Build
@@ -27,6 +26,6 @@ jobs:
     - name: publish on version change
       run: dotnet pack ./src/QueryFilter/QueryFilter.csproj --configuration Release --no-build --output bin/Release/Publish
     - name: Publish to Nuget
-      run: dotnet nuget push bin/Release/Publish/**/*.nupkg --skip-duplicate -k ${{ secrets.NUGET_API_KEY }}
+      run: dotnet nuget push bin/Release/Publish/**/*.nupkg --skip-duplicate --api-key ${{ secrets.NUGET_API_KEY }} --source https://api.nuget.org/v3/index.json
    
     
