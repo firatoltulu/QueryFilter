@@ -24,14 +24,11 @@ jobs:
     - name: Test
       run: dotnet test ./src --no-restore --verbosity normal
     - name: publish on version change
-      id: NugetPublish
       uses: rohith/publish-nuget@v2
       with:
         PROJECT_FILE_PATH: ./src/QueryFilter/QueryFilter.csproj
         PACKAGE_NAME: QueryFilter
-        TAG_COMMIT: true
+        TAG_FORMAT: '*'
         NUGET_KEY: ${{secrets.NUGET_API_KEY}}
-    - name: Publish Nuget
-    - run: dotnet push ${{ steps.NugetPublish.outputs.PACKAGE_NAME }} --api-key ${{secrets.NUGET_API_KEY}} --source https://api.nuget.org/v3/index.json 
    
     
