@@ -24,7 +24,7 @@ jobs:
     - name: Test
       run: dotnet test ./src --no-restore --verbosity normal
     - name: Build NuGet package
-      run: dotnet ./src/QueryFilter/QueryFilter.csproj pack -c Release -o out  
+      run: dotnet pack ./src/QueryFilter/QueryFilter.csproj  -c Release -o out  
     - name: publish on version change
       uses: rohith/publish-nuget@v2
       with:
