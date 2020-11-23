@@ -23,7 +23,7 @@ namespace QueryFilter.Test
         [TestCaseSource("_studentLists")]
         public void StringMember_Filtered_Success(IEnumerable<StudentModel> studentModels)
         {
-            var queryFilterModel = QueryFilterModel.Parse("$filter=Name~eq~'NancyI'~and~Birth~lt~datetime'2020-12-17'");
+            var queryFilterModel = QueryFilterModel.Parse("$filter=Name~eq~'Nancy'");
             var result = studentModels.QueryFilter(queryFilterModel);
             Assert.AreEqual(result.Items.FirstOrDefault().Name, "Nancy");
         }
