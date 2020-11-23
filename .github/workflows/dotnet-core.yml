@@ -23,15 +23,15 @@ jobs:
       run: dotnet build ./src --configuration Release --no-restore
     - name: Test
       run: dotnet test ./src --no-restore --verbosity normal
-    - name: Build NuGet package
-      run: dotnet pack ./src/QueryFilter/QueryFilter.csproj  -c Release -o out  
     - name: publish on version change
+      id: NugetPublish
       uses: rohith/publish-nuget@v2
       with:
         PROJECT_FILE_PATH: ./src/QueryFilter/QueryFilter.csproj
         PACKAGE_NAME: QueryFilter
         TAG_COMMIT: true
         NUGET_KEY: ${{secrets.NUGET_API_KEY}}
- 
+    - name: Publish Nuget
+    - run: dotnet push ${{ steps.NugetPublish.outputs.PACKAGE_NAME }} --api-key ${{secrets.NUGET_API_KEY}} --source https://api.nuget.org/v3/index.json 
    
     
