@@ -34,31 +34,31 @@ namespace QueryFilter
         public IList<SortDescriptor> SortDescriptors
         {
             get;
-            private set;
+            set;
         }
 
         public IList<IFilterDescriptor> FilterDescriptors
         {
             get;
-            private set;
+            set;
         }
 
         public IList<SelectDescriptor> SelectDescriptors
         {
             get;
-            private set;
+            set;
         }
 
         public IList<GroupDescriptor> GroupDescriptors
         {
             get;
-            private set;
+            set;
         }
 
         public IList<AggDescriptor> AggDescriptors
         {
             get;
-            private set;
+            set;
         }
 
         public static QueryFilterModel Parse(string queryFilter)
