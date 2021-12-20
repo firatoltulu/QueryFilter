@@ -80,6 +80,18 @@ namespace QueryFilter
             return new PagedList<TEntity>(result, totalCount);
         }
 
+        public static IQueryable<TEntity> Query<TEntity>(this IEnumerable<TEntity> entities, QueryFilterModel queryFilterCommand)
+            where TEntity : class
+        {
+            var entityFilterModel = queryFilterCommand.ToEntityFilterModel<TEntity>();
+            var query = entities.AsQueryable();
+
+            if (entityFilterModel.Filter != null)
+                query = query.Where<TEntity>(entityFilterModel.Filter);
+
+            return query;
+        }
+
         public static PagedList<TEntity> QueryFilter<TEntity>(this IEnumerable<TEntity> entities, string queryFilter)
             where TEntity : class
         {
