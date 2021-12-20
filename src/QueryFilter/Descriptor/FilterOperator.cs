@@ -55,6 +55,8 @@ namespace QueryFilter
         /// </summary>
         NotContains,
 
-        Beetween
+        Beetween,
+
+        Count
     }
 }

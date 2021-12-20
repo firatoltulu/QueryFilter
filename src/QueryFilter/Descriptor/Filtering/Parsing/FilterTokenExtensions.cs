@@ -21,7 +21,9 @@ namespace QueryFilter
             { "contains", FilterOperator.Contains },
             { "necontains", FilterOperator.NotContains },
             { "endswith", FilterOperator.EndsWith },
-            { "in", FilterOperator.IsContainedIn }
+            { "in", FilterOperator.IsContainedIn },
+            { "ct", FilterOperator.Count }
+
         };
 
         private static readonly IDictionary<FilterOperator, string> operatorToToken = new Dictionary<FilterOperator, string>
@@ -36,7 +38,9 @@ namespace QueryFilter
             { FilterOperator.Contains, "contains" },
             { FilterOperator.NotContains, "necontains" },
             { FilterOperator.EndsWith, "endswith" },
-            { FilterOperator.IsContainedIn, "in" }
+            { FilterOperator.IsContainedIn, "in" },
+            { FilterOperator.Count, "ct" }
+
         };
 
         public static FilterOperator ToFilterOperator(this FilterToken token)

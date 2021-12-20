@@ -17,6 +17,7 @@ namespace QueryFilter
         private static MethodInfo startsWithMethod = typeof(string).GetMethod("StartsWith", new[] { typeof(string) });
         private static MethodInfo endsWithMethod = typeof(string).GetMethod("EndsWith", new[] { typeof(string) });
         private static MethodInfo isNullOrEmpty = typeof(string).GetMethod("IsNullOrEmpty", new[] { typeof(string) });
+        private static MethodInfo CountMethod = typeof(Enumerable).GetMethods().First(method => method.Name == "Count" && method.GetParameters().Length == 1);
 
         private static readonly Dictionary<FilterOperator, Func<Expression, Expression, Expression>> Expressions;
 
@@ -34,6 +35,7 @@ namespace QueryFilter
             Expressions.Add(FilterOperator.Contains, (member, constant) => Expression.Call(member, containsMethod, constant));
             Expressions.Add(FilterOperator.NotContains, (member, constant) => Expression.Not(Expression.Call(member, containsMethod, constant)));
             Expressions.Add(FilterOperator.IsContainedIn, (member, constant) => In(member, constant));
+            Expressions.Add(FilterOperator.Count, (member, constant) => Expression.Call(member, CountMethod, constant));
         }
 
         public static Expression<Func<T, bool>> GetExpression<T>(IList<IFilterDescriptor> filter, FilterCompositionLogicalOperator connector = FilterCompositionLogicalOperator.And) where T : class

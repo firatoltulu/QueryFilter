@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 
 namespace QueryFilter.Test.Model
 {
@@ -19,6 +20,7 @@ namespace QueryFilter.Test.Model
 
         public int? Total { get; set; }
 
+        public List<StudentModel> Counter = new List<StudentModel>();
 
     }
 }
