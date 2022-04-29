@@ -5,7 +5,7 @@
     <Authors>Fırat Oltulu</Authors>
     <Company>SmartCreative</Company>
     <AssemblyVersion>1.0.5</AssemblyVersion>
-    <Version>1.0.6</Version>
+    <Version>1.0.7</Version>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <PackageId>SmartCreative.QueryFilter</PackageId>
     <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
