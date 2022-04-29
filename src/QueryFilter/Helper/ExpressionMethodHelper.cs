@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Newtonsoft.Json.Linq;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -181,8 +182,8 @@ namespace QueryFilter
             {
                 if (isCollection)
                 {
-                    var vals = (value as object[]).Select(p =>
-                                Expression.Constant(p.Convert(type), type));
+                    var vals = JArray.FromObject(value).Select(p =>
+                                Expression.Constant(p.ToObject(type), type));
                     return vals.ToList();
                 }
                 else

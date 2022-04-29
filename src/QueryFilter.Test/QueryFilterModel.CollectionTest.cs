@@ -93,5 +93,20 @@ namespace QueryFilter.Test
             //var result = studentModels.QueryFilter(queryFilterModel);
             Assert.AreEqual(1, 1);
         }
+
+        [TestCaseSource("_studentLists")]
+        public void IntMember_FilteredIn_Model_Test_Success(IEnumerable<StudentModel> studentModels)
+        {
+            var queryFilter = new QueryFilterModel();
+            queryFilter.FilterDescriptors.Add(new FilterDescriptor()
+            {
+                Member = nameof(StudentModel.Age),
+                Operator = FilterOperator.IsContainedIn,
+                Value = new int[] { 32, 20 }
+            });
+
+            var result = studentModels.QueryFilter(queryFilter);
+            Assert.AreEqual(result.TotalCount, 1);
+        }
     }
 }
