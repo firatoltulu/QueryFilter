@@ -108,5 +108,13 @@ namespace QueryFilter.Test
             var result = studentModels.QueryFilter(queryFilter);
             Assert.AreEqual(result.TotalCount, 1);
         }
+
+        [TestCaseSource("_studentLists")]
+        public void OrderBy_Test_Success(IEnumerable<StudentModel> studentModels)
+        {
+            var queryFilterModel = QueryFilterModel.Parse("$skip=0&$top=15&$orderby=Name-asc&$filter=");
+            var result = studentModels.QueryFilter(queryFilterModel);
+            Assert.AreEqual(result.TotalCount, 4);
+        }
     }
 }
