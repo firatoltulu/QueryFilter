@@ -23,6 +23,7 @@ namespace QueryFilter
         RightParenthesis,
         LeftSquareBracket,
         RightSquareBracket,
-        Comma
+        Comma,
+        Time
     }
 }

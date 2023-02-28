@@ -155,7 +155,12 @@ namespace QueryFilter
 
             return new FilterToken { TokenType = FilterTokenType.DateTime, Value = result };
         }
+        private FilterToken Time(string result)
+        {
+            TryParseString(out result);
 
+            return new FilterToken { TokenType = FilterTokenType.Time, Value = result };
+        }
         private FilterToken IgnoreCaseString(string result)
         {
             TryParseString(out result);
@@ -197,6 +202,10 @@ namespace QueryFilter
             if (result == "datetime")
             {
                 return Date(result);
+            }
+            if (result == "time")
+            {
+                return Time(result);
             }
 
             if (result == "ic")

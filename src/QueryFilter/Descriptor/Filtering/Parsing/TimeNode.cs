@@ -5,7 +5,8 @@
 
 namespace QueryFilter
 {
-    public class DateTimeNode : IFilterNode, IValueNode
+
+    public class TimeNode : IFilterNode, IValueNode
     {
         public object Value
         {
@@ -18,5 +19,4 @@ namespace QueryFilter
             visitor.Visit(this);
         }
     }
-  
 }

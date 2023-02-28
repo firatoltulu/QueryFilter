@@ -17,6 +17,7 @@ namespace QueryFilter.Test.Model
 
         public DateTime Start { get; set; }
 
+        public TimeSpan Time { get; set; }
 
         public int? Total { get; set; }
 

@@ -108,6 +108,10 @@ namespace QueryFilter
             {
                 return ParseDateTimeExpression();
             }
+            if (Is(FilterTokenType.Time))
+            {
+                return ParseTimeExpression();
+            }
 
             if (Is(FilterTokenType.Property))
             {
@@ -139,10 +143,10 @@ namespace QueryFilter
             Expect(FilterTokenType.Or);
             IFilterNode secondArgument = OrExpression();
             return new OrNode
-                       {
-                           First = firstArgument,
-                           Second = secondArgument
-                       };
+            {
+                First = firstArgument,
+                Second = secondArgument
+            };
         }
 
         private IFilterNode ParseComparisonExpression(IFilterNode firstArgument)
@@ -154,11 +158,11 @@ namespace QueryFilter
                 IFilterNode secondArgument = PrimaryExpression();
 
                 return new ComparisonNode
-                           {
-                               First = firstArgument,
-                               FilterOperator = comparison.ToFilterOperator(),
-                               Second = secondArgument
-                           };
+                {
+                    First = firstArgument,
+                    FilterOperator = comparison.ToFilterOperator(),
+                    Second = secondArgument
+                };
             }
 
             FilterToken function = Expect(FilterTokenType.Function);
@@ -179,10 +183,10 @@ namespace QueryFilter
             Expect(FilterTokenType.And);
             IFilterNode secondArgument = ComparisonExpression();
             return new AndNode
-                       {
-                           First = firstArgument,
-                           Second = secondArgument
-                       };
+            {
+                First = firstArgument,
+                Second = secondArgument
+            };
         }
 
         private IFilterNode ParseStringExpression()
@@ -190,9 +194,9 @@ namespace QueryFilter
             FilterToken stringToken = Expect(FilterTokenType.String);
 
             return new StringNode
-                       {
-                           Value = stringToken.Value
-                       };
+            {
+                Value = stringToken.Value
+            };
         }
         private IFilterNode ParseStringExpressionUseIgnoreCase()
         {
@@ -233,9 +237,9 @@ namespace QueryFilter
             FilterToken stringToken = Expect(FilterTokenType.Boolean);
 
             return new BooleanNode
-                       {
-                           Value = Convert.ToBoolean(stringToken.Value)
-                       };
+            {
+                Value = Convert.ToBoolean(stringToken.Value)
+            };
         }
 
         private IFilterNode ParseNull()
@@ -253,9 +257,9 @@ namespace QueryFilter
             FilterToken number = Expect(FilterTokenType.Number);
 
             return new NumberNode
-                       {
-                           Value = Convert.ToDouble(number.Value, CultureInfo.InvariantCulture)
-                       };
+            {
+                Value = Convert.ToDouble(number.Value, CultureInfo.InvariantCulture)
+            };
         }
 
         private IFilterNode ParsePropertyExpression()
@@ -263,9 +267,9 @@ namespace QueryFilter
             FilterToken property = Expect(FilterTokenType.Property);
 
             return new PropertyNode
-                       {
-                           Name = property.Value
-                       };
+            {
+                Name = property.Value
+            };
         }
 
         private IFilterNode ParseDateTimeExpression()
@@ -273,11 +277,19 @@ namespace QueryFilter
             FilterToken dateTime = Expect(FilterTokenType.DateTime);
             var acceptDates = new string[] { "dd.MM.yyyy", "dd.MM.yyyy HH:mm", "dd.MM.yyyy HH:mm:ss", "yyyy-MM-dd", "yyyy-MM-ddTHH:mm:ss", "yyyy-MM-ddTHH:mm:ssZ" };
             return new DateTimeNode
-                       {
-                           Value = DateTime.ParseExact(dateTime.Value, acceptDates, null, DateTimeStyles.None)
-                       };
+            {
+                Value = DateTime.ParseExact(dateTime.Value, acceptDates, null, DateTimeStyles.None)
+            };
         }
-
+        private IFilterNode ParseTimeExpression()
+        {
+            FilterToken dateTime = Expect(FilterTokenType.Time);
+            var acceptDates = new string[] { "h\\:mm", "g" };
+            return new TimeNode
+            {
+                Value = TimeSpan.ParseExact(dateTime.Value, acceptDates, null,TimeSpanStyles.AssumeNegative)
+            };
+        }
         private IFilterNode ParseNestedExpression()
         {
             Expect(FilterTokenType.LeftParenthesis);
@@ -293,9 +305,9 @@ namespace QueryFilter
             FilterToken function = Expect(FilterTokenType.Function);
 
             var functionNode = new FunctionNode
-                                   {
-                                       FilterOperator = function.ToFilterOperator()
-                                   };
+            {
+                FilterOperator = function.ToFilterOperator()
+            };
 
             Expect(FilterTokenType.LeftSquareBracket);
             functionNode.Arguments.Add(Expression());
