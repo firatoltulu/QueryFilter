@@ -32,10 +32,13 @@ namespace QueryFilter
             Expressions.Add(FilterOperator.IsLessThan, (member, constant) => Expression.LessThan(member, constant));
             Expressions.Add(FilterOperator.IsLessThanOrEqualTo, (member, constant) => Expression.LessThanOrEqual(member, constant));
             Expressions.Add(FilterOperator.StartsWith, (member, constant) => Expression.Call(member, startsWithMethod, constant));
+            Expressions.Add(FilterOperator.NotStartsWith, (member, constant) => Expression.Not(Expression.Call(member, startsWithMethod, constant)));
             Expressions.Add(FilterOperator.EndsWith, (member, constant) => Expression.Call(member, endsWithMethod, constant));
+            Expressions.Add(FilterOperator.NotEndsWith, (member, constant) => Expression.Not(Expression.Call(member, endsWithMethod, constant)));
             Expressions.Add(FilterOperator.Contains, (member, constant) => Expression.Call(member, containsMethod, constant));
             Expressions.Add(FilterOperator.NotContains, (member, constant) => Expression.Not(Expression.Call(member, containsMethod, constant)));
             Expressions.Add(FilterOperator.IsContainedIn, (member, constant) => In(member, constant));
+            Expressions.Add(FilterOperator.NotIsContainedIn, (member, constant) => NotIn(member, constant));
             Expressions.Add(FilterOperator.Count, (member, constant) => Expression.Call(member, CountMethod, constant));
         }
 
@@ -48,6 +51,7 @@ namespace QueryFilter
                 Expression expr = Visit(param, statement);
                 expression = CombineExpressions(expression, expr, connector);
             }
+
             return Expression.Lambda<Func<T, bool>>(expression, param);
         }
 
@@ -89,7 +93,9 @@ namespace QueryFilter
         private static Expression GetExpression(ParameterExpression param, FilterDescriptor statement, string propertyName = null)
         {
             Expression member = GetMemberExpression(param, propertyName ?? statement.Member);
-            if (statement.Operator != FilterOperator.IsContainedIn)
+            var inOperator = new List<FilterOperator>() { FilterOperator.IsContainedIn, FilterOperator.NotIsContainedIn };
+
+            if (inOperator.IndexOf(statement.Operator) == -1)
             {
                 var convertedValue = statement.Value.Convert(member.Type);
                 Expression constant = Expression.Convert(Expression.Constant(convertedValue), member.Type);

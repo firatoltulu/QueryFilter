@@ -57,6 +57,13 @@ namespace QueryFilter
 
         Beetween,
 
-        Count
+        Count,
+
+        NotStartsWith,
+     
+     
+        NotEndsWith,
+
+        NotIsContainedIn
     }
 }

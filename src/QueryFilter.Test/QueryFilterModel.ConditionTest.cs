@@ -71,5 +71,7 @@ namespace QueryFilter.Test
             Assert.AreEqual(((DateTime)parsed.Value).Date, new DateTime(2020, 11, 05).Date);
             Assert.AreEqual(parsed.Member, "ExpireDate");
         }
+
+       
     }
 }

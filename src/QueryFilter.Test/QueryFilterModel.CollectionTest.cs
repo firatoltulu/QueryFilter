@@ -95,6 +95,31 @@ namespace QueryFilter.Test
         }
 
         [TestCaseSource("_studentLists")]
+        public void StringMember_FilteredNotIn_Success(IEnumerable<StudentModel> studentModels)
+        {
+            var queryFilterModel = QueryFilterModel.Parse("$filter=Name~notin~['Nancy']");
+            var result = studentModels.QueryFilter(queryFilterModel);
+            Assert.AreEqual(result.TotalCount, 3);
+        }
+
+        [TestCaseSource("_studentLists")]
+        public void StringMember_FilteredNotStartsWith_Success(IEnumerable<StudentModel> studentModels)
+        {
+            var queryFilterModel = QueryFilterModel.Parse("$filter=Name~notstartswith~'Nan'");
+            var result = studentModels.QueryFilter(queryFilterModel);
+            Assert.AreEqual(result.TotalCount, 3);
+        
+        }
+
+        [TestCaseSource("_studentLists")]
+        public void StringMember_FilteredNotEndsWith_Success(IEnumerable<StudentModel> studentModels)
+        {
+            var queryFilterModel = QueryFilterModel.Parse("$filter=Name~notendswith~'Nan'");
+            var result = studentModels.QueryFilter(queryFilterModel);
+            Assert.AreEqual(result.TotalCount, 4);
+        }
+
+        [TestCaseSource("_studentLists")]
         public void StringMember_FilteredCount_Not_Null_Success(IEnumerable<StudentModel> studentModels)
         {
             //var queryFilterModel = QueryFilterModel.Parse("$filter=Counter~ct~0");
@@ -123,6 +148,15 @@ namespace QueryFilter.Test
             var queryFilterModel = QueryFilterModel.Parse("$skip=0&$top=15&$orderby=Name-asc&$filter=");
             var result = studentModels.QueryFilter(queryFilterModel);
             Assert.AreEqual(result.TotalCount, 4);
+        }
+
+        [TestCaseSource("_studentLists")]
+        public void MultipleOperator_Test_Success(IEnumerable<StudentModel> studentModels)
+        {
+            var queryFilterModel = QueryFilterModel.Parse("$filter=(Name~eq~null~and~Age~in~[93])~or~((Name~eq~'Nancy'~and~Age~in~[35]))");
+
+            var result = studentModels.QueryFilter(queryFilterModel);
+            Assert.AreEqual(result.TotalCount, 2);
         }
     }
 }

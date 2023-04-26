@@ -17,7 +17,7 @@ namespace QueryFilter
         private static readonly string[] ComparisonOperators = new[] { "eq", "ne", "lt", "le", "gt", "ge" };
         private static readonly string[] LogicalOperators = new[] { "and", "or", "not" };
         private static readonly string[] Booleans = new[] { "true", "false" };
-        private static readonly string[] Functions = new[] { "contains", "endswith", "startswith", "in", "necontains" };
+        private static readonly string[] Functions = new[] { "contains", "endswith", "startswith", "in", "necontains", "notin", "notendswith", "notstartswith" };
 
         private int currentCharacterIndex;
         private readonly string input;
@@ -165,7 +165,7 @@ namespace QueryFilter
         {
             TryParseString(out result);
 
-            return new FilterToken { TokenType = FilterTokenType.StringUseIgnoreCase, Value = result  };
+            return new FilterToken { TokenType = FilterTokenType.StringUseIgnoreCase, Value = result };
         }
         private static FilterToken ComparisonOperator(string result)
         {

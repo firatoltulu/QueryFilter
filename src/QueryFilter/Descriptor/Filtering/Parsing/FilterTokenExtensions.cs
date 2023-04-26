@@ -6,7 +6,7 @@
 namespace QueryFilter
 {
     using System.Collections.Generic;
-    
+
     public static class FilterTokenExtensions
     {
         private static readonly IDictionary<string, FilterOperator> tokenToOperator = new Dictionary<string, FilterOperator>
@@ -22,7 +22,10 @@ namespace QueryFilter
             { "necontains", FilterOperator.NotContains },
             { "endswith", FilterOperator.EndsWith },
             { "in", FilterOperator.IsContainedIn },
-            { "ct", FilterOperator.Count }
+            { "ct", FilterOperator.Count },
+            { "notendswith", FilterOperator.NotEndsWith },
+            { "notin", FilterOperator.NotIsContainedIn },
+            { "notstartswith", FilterOperator.NotStartsWith },
 
         };
 
@@ -39,8 +42,10 @@ namespace QueryFilter
             { FilterOperator.NotContains, "necontains" },
             { FilterOperator.EndsWith, "endswith" },
             { FilterOperator.IsContainedIn, "in" },
-            { FilterOperator.Count, "ct" }
-
+            { FilterOperator.Count, "ct" },
+            { FilterOperator.NotStartsWith, "notstartswith" },
+            { FilterOperator.NotEndsWith, "notendswith" },
+            { FilterOperator.NotIsContainedIn, "notin" },
         };
 
         public static FilterOperator ToFilterOperator(this FilterToken token)
