@@ -47,7 +47,10 @@ namespace QueryFilter
                 }
                 else if (TryParseString(out result))
                 {
-                    tokens.Add(String(result));
+                    if (string.IsNullOrEmpty(result) == false)
+                        tokens.Add(String(result));
+                    else
+                        tokens.Add(NullValue(result));
                 }
                 else if (TryParseCharacter(out result, '('))
                 {
