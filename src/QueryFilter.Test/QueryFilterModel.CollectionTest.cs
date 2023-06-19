@@ -13,7 +13,7 @@ namespace QueryFilter.Test
         {
             new object[] {
                 new List<StudentModel> {
-                new StudentModel { Name="Nancy",LastName="Fuller",Age=35, NullValue =1, Birth=new DateTime(2020,11,20), Time=new TimeSpan(13,0,0) },
+                new StudentModel { Id=Guid.NewGuid() ,Name="Nancy",LastName="Fuller",Age=35, NullValue =1, Birth=new DateTime(2020,11,20), Time=new TimeSpan(13,0,0) },
                 new StudentModel { Name="Andrew",LastName="Leverling",Age=33, NullValue=2,  Start=new DateTime(2020,11,20), Time=new TimeSpan(11,0,0) },
                 new StudentModel { Name="Janet",LastName="Peacock",Age=32 , NullValue=null, Total=1, Time=new TimeSpan(9,0,0)},
                 new StudentModel { Name=null,LastName=string.Empty,Age=93,NullValue=3, Counter=new List<StudentModel>(){
@@ -24,6 +24,14 @@ namespace QueryFilter.Test
 
         [TestCaseSource("_studentLists")]
         public void StringMember_Filtered_Success(IEnumerable<StudentModel> studentModels)
+        {
+            var queryFilterModel = QueryFilterModel.Parse("$filter=Id~eq~'f55b2c58-bd48-4ace-aaf4-cddc3fc00e13'");
+            var result = studentModels.QueryFilter(queryFilterModel);
+            Assert.AreEqual(result.TotalCount, 0);
+        }
+
+        [TestCaseSource("_studentLists")]
+        public void GuidMember_Filtered_Success(IEnumerable<StudentModel> studentModels)
         {
             var queryFilterModel = QueryFilterModel.Parse("$filter=Name~eq~'Nancy'");
             var result = studentModels.QueryFilter(queryFilterModel);

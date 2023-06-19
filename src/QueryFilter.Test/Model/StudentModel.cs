@@ -20,6 +20,7 @@ namespace QueryFilter.Test.Model
         public TimeSpan Time { get; set; }
 
         public int? Total { get; set; }
+        public Guid? Id { get; set; }
 
         public List<StudentModel> Counter = new List<StudentModel>();
 

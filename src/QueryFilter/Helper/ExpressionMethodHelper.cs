@@ -101,6 +101,7 @@ namespace QueryFilter
 
             var inOperator = new List<FilterOperator>() { FilterOperator.IsContainedIn, FilterOperator.NotIsContainedIn };
 
+
             var constant = Expression.Constant(statement.Value);
 
             var expressionOperator = Expressions[statement.Operator];
@@ -108,7 +109,8 @@ namespace QueryFilter
 
             if (inOperator.IndexOf(statement.Operator) == -1)
             {
-                var valueAs = Expression.Convert(constant, member.Type);
+                var convertedValue = statement.Value.Convert(member.Type);
+                var valueAs = Expression.Convert(Expression.Constant(convertedValue), member.Type);
 
                 if (member.Type == typeof(string))
                 {
