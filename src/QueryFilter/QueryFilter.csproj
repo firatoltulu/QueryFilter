@@ -4,15 +4,15 @@
     <TargetFramework>netstandard2.1</TargetFramework>
     <Authors>Fırat Oltulu</Authors>
     <Company>SmartCreative</Company>
-    <AssemblyVersion>1.0.10</AssemblyVersion>
-    <Version>1.0.10</Version>
+    <AssemblyVersion>1.0.12</AssemblyVersion>
+    <Version>1.0.12</Version>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <PackageId>SmartCreative.QueryFilter</PackageId>
     <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
 	   <IsPackable>true</IsPackable>
 	   <AssemblyName>QueryFilter</AssemblyName>
 	   <RootNamespace>QueryFilter</RootNamespace>
-	   <FileVersion>1.0.0.8</FileVersion>
+	   <FileVersion>1.0.0.10</FileVersion>
 	   <RepositoryUrl>https://github.com/firatoltulu/QueryFilter</RepositoryUrl>
 	   <PackageLicenseFile>LICENSE</PackageLicenseFile>
 	   <Copyright>@Firat Oltulu</Copyright>

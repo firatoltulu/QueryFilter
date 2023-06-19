@@ -3,6 +3,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Data;
 using System.Globalization;
 using System.Linq;
 using System.Linq.Expressions;
@@ -92,35 +93,44 @@ namespace QueryFilter
 
         private static Expression GetExpression(ParameterExpression param, FilterDescriptor statement, string propertyName = null)
         {
-            Expression member = GetMemberExpression(param, propertyName ?? statement.Member);
+            var member = GetMemberExpression(param, propertyName ?? statement.Member);
+            Expression resultExpr = null;
+
+            if (Nullable.GetUnderlyingType(member.Type) != null && statement.Value != null)
+                resultExpr = Expression.Property(member, "HasValue");
+
             var inOperator = new List<FilterOperator>() { FilterOperator.IsContainedIn, FilterOperator.NotIsContainedIn };
+
+            var constant = Expression.Constant(statement.Value);
+
+            var expressionOperator = Expressions[statement.Operator];
+            Expression expressionInvoke;
 
             if (inOperator.IndexOf(statement.Operator) == -1)
             {
-                var convertedValue = statement.Value.Convert(member.Type);
-                Expression constant = Expression.Convert(Expression.Constant(convertedValue), member.Type);
+                var valueAs = Expression.Convert(constant, member.Type);
 
                 if (member.Type == typeof(string))
                 {
-                    if (convertedValue != null)
-                    {
-                        var trimMemberCall = Expression.Call(member, trimMethod);
-                        member = Expression.Call(trimMemberCall, toLowerMethod);
-
-                        var trimConstantCall = Expression.Call(constant, trimMethod);
-                        constant = Expression.Call(trimConstantCall, toLowerMethod);
-                    }
+                    if (constant.Value != null)
+                        expressionInvoke = expressionOperator.Invoke(member.TrimToLower(), valueAs.TrimToLower())
+                            .AddNullCheck(member);
                     else
-                        constant = Expression.Constant(string.Empty);
+                        expressionInvoke = expressionOperator.Invoke(member, valueAs);
                 }
-
-                return Expressions[statement.Operator].Invoke(member, constant);
+                else
+                    expressionInvoke = Expressions[statement.Operator].Invoke(member, valueAs);
             }
             else
             {
-                Expression constant = Expression.Constant(statement.Value);
-                return Expressions[statement.Operator].Invoke(member, constant);
+                if (member.Type != typeof(string))
+                    expressionInvoke = Expressions[statement.Operator].Invoke(member, constant);
+                else
+                    expressionInvoke = Expressions[statement.Operator].Invoke(member, constant).AddNullCheck(member);
             }
+
+            resultExpr = resultExpr != null ? Expression.AndAlso(resultExpr, expressionInvoke) : expressionInvoke;
+            return resultExpr;
         }
 
         private static Expression Contains(Expression member, Expression expression)
@@ -278,6 +288,33 @@ namespace QueryFilter
         private static object GetDefaultValue(this Type type)
         {
             return type.GetTypeInfo().IsValueType ? Activator.CreateInstance(type) : null;
+        }
+
+        public static void CheckPropertyValueMismatch(MemberExpression member, ConstantExpression constant1)
+        {
+            var memberType = member.Member.MemberType == MemberTypes.Property ? (member.Member as PropertyInfo).PropertyType : (member.Member as FieldInfo).FieldType;
+
+            var constant1Type = GetConstantType(constant1);
+            var nullableType = constant1Type != null ? Nullable.GetUnderlyingType(constant1Type) : null;
+
+            var constantValueIsNotNull = constant1.Value != null;
+            var memberAndConstantTypeDoNotMatch = nullableType == null && memberType != constant1Type;
+            var memberAndNullableUnderlyingTypeDoNotMatch = nullableType != null && memberType != nullableType;
+
+            if (constantValueIsNotNull && (memberAndConstantTypeDoNotMatch || memberAndNullableUnderlyingTypeDoNotMatch))
+            {
+                throw new ArgumentException($"{member.Member.Name}, {memberType.Name}, {constant1.Type.Name}");
+            }
+        }
+
+        private static Type GetConstantType(ConstantExpression constant)
+        {
+            if (constant != null && constant.Value != null && constant.Value.IsGenericList())
+            {
+                return constant.Value.GetType().GenericTypeArguments[0];
+            }
+
+            return constant != null && constant.Value != null ? constant.Value.GetType() : null;
         }
     }
 }

@@ -16,7 +16,7 @@ namespace QueryFilter.Test
                 new StudentModel { Name="Nancy",LastName="Fuller",Age=35, NullValue =1, Birth=new DateTime(2020,11,20), Time=new TimeSpan(13,0,0) },
                 new StudentModel { Name="Andrew",LastName="Leverling",Age=33, NullValue=2,  Start=new DateTime(2020,11,20), Time=new TimeSpan(11,0,0) },
                 new StudentModel { Name="Janet",LastName="Peacock",Age=32 , NullValue=null, Total=1, Time=new TimeSpan(9,0,0)},
-                new StudentModel { Name=string.Empty,LastName=string.Empty,Age=93,NullValue=3, Counter=new List<StudentModel>(){
+                new StudentModel { Name=null,LastName=string.Empty,Age=93,NullValue=3, Counter=new List<StudentModel>(){
                     new StudentModel { Name="Nancy",LastName="Fuller",Age=35, NullValue =1, Birth=new DateTime(2020,11,20) }
                 } }
              }}
@@ -46,7 +46,7 @@ namespace QueryFilter.Test
             Assert.AreEqual(result.TotalCount, 1);
         }
 
-         [TestCaseSource("_studentLists")]
+        [TestCaseSource("_studentLists")]
         public void TimeMember_Filtered_Success(IEnumerable<StudentModel> studentModels)
         {
             var queryFilterModel = QueryFilterModel.Parse("$filter=Time~gt~time'09:00:00'");
@@ -99,7 +99,7 @@ namespace QueryFilter.Test
         {
             var queryFilterModel = QueryFilterModel.Parse("$filter=Name~notin~['Nancy']");
             var result = studentModels.QueryFilter(queryFilterModel);
-            Assert.AreEqual(result.TotalCount, 3);
+            Assert.AreEqual(result.TotalCount, 2);
         }
 
         [TestCaseSource("_studentLists")]
@@ -107,8 +107,8 @@ namespace QueryFilter.Test
         {
             var queryFilterModel = QueryFilterModel.Parse("$filter=Name~notstartswith~'Nan'");
             var result = studentModels.QueryFilter(queryFilterModel);
-            Assert.AreEqual(result.TotalCount, 3);
-        
+            Assert.AreEqual(result.TotalCount, 2);
+
         }
 
         [TestCaseSource("_studentLists")]
@@ -116,7 +116,7 @@ namespace QueryFilter.Test
         {
             var queryFilterModel = QueryFilterModel.Parse("$filter=Name~notendswith~'Nan'");
             var result = studentModels.QueryFilter(queryFilterModel);
-            Assert.AreEqual(result.TotalCount, 4);
+            Assert.AreEqual(result.TotalCount, 3);
         }
 
         [TestCaseSource("_studentLists")]
