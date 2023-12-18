@@ -6,7 +6,7 @@ using System.Text;
 
 namespace QueryFilter.Formatter
 {
-    public class SQLFormatter
+    public class SQLFormatter : IQueryFilterSQLFormatter
     {
         public SQLFormatter()
         {
@@ -15,7 +15,7 @@ namespace QueryFilter.Formatter
 
         private StringBuilder _builder = null;
 
-        public static string Format(QueryFilterModel command)
+        public string Format(QueryFilterModel command)
         {
             var formatter = new SQLFormatter();
             formatter.select(command.SelectDescriptors);
@@ -32,7 +32,7 @@ namespace QueryFilter.Formatter
             return formatter.ToString();
         }
 
-        public static string FormatOnlyCount(QueryFilterModel command)
+        public string FormatOnlyCount(QueryFilterModel command)
         {
             var formatter = new SQLFormatter();
             formatter.select(" Count(*) ");
@@ -46,7 +46,7 @@ namespace QueryFilter.Formatter
             return formatter.ToString();
         }
 
-        public static string FormatOnlyFilter(QueryFilterModel command)
+        public string FormatOnlyFilter(QueryFilterModel command)
         {
             var formatter = new SQLFormatter();
             formatter.select(command.SelectDescriptors);
