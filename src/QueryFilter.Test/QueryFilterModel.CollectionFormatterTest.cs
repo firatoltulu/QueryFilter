@@ -88,14 +88,14 @@ namespace QueryFilter.Test
         
 
         [TestCaseSource("_studentLists")]
-        public void IntMember_FilteredIn_Model_Test_Success(IEnumerable<StudentModel> studentModels)
+        public void IntMember_FilteredIn_Model_INT_Test_Success(IEnumerable<StudentModel> studentModels)
         {
             var queryFilter = new QueryFilterModel();
             queryFilter.FilterDescriptors.Add(new FilterDescriptor()
             {
                 Member = nameof(StudentModel.Age),
                 Operator = FilterOperator.IsContainedIn,
-                Value = new int[] { 32, 20 }
+                Value = new List<int>(){ 32, 20 }
             });
 
             var result = new PostgreSQLFormatter().Format(queryFilter);
@@ -103,7 +103,22 @@ namespace QueryFilter.Test
 
         }
 
-        
+        [TestCaseSource("_studentLists")]
+        public void IntMember_FilteredIn_Model_GUID_Test_Success(IEnumerable<StudentModel> studentModels)
+        {
+            var queryFilter = new QueryFilterModel();
+            queryFilter.FilterDescriptors.Add(new FilterDescriptor()
+            {
+                Member = nameof(StudentModel.Age),
+                Operator = FilterOperator.IsContainedIn,
+                Value = new List<Guid>() { Guid.NewGuid() }
+            });
+
+            var result = new PostgreSQLFormatter().Format(queryFilter);
+            Assert.IsTrue(result.Contains("(32,20)"));
+
+        }
+
 
         [TestCaseSource("_studentLists")]
         public void MultipleOperator_Test_Success(IEnumerable<StudentModel> studentModels)

@@ -310,7 +310,13 @@ namespace QueryFilter.Formatter
                             }
 
                             Write(")");
+                        }else if(value is Guid) { 
+                            this.Write("'");
+                            this.Write(value.ToString());
+                            this.Write("'");
+
                         }
+
                         break;
 
                     case TypeCode.Single:
