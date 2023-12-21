@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Newtonsoft.Json.Linq;
+using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
@@ -195,7 +196,7 @@ namespace QueryFilter.Formatter
                 case FilterOperator.IsNotEqualTo:
                 case FilterOperator.IsGreaterThanOrEqualTo:
                 case FilterOperator.IsGreaterThan:
-                    WriteWithSpace(filter.Member);
+                    WriteWithSpace($"\"{filter.Member}\"");
                     WriteWithSpace(op);
                     WriteValue(filter.Value);
                     break;
@@ -203,13 +204,19 @@ namespace QueryFilter.Formatter
                 case FilterOperator.StartsWith:
                 case FilterOperator.EndsWith:
                 case FilterOperator.Contains:
-                    WriteWithSpace(filter.Member);
+                case FilterOperator.NotContains:
+                case FilterOperator.NotEndsWith:
+                case FilterOperator.NotStartsWith:
+
+                    WriteWithSpace($"\"{filter.Member}\"");
                     WriteWithSpace(string.Format(op, filter.Value.ToString()));
                     break;
 
+                case FilterOperator.NotIsContainedIn:
                 case FilterOperator.IsContainedIn:
-                    WriteWithSpace(filter.Member);
-                    WriteWithSpace(string.Format(op, filter.Value));
+                    WriteWithSpace($"\"{filter.Member}\"");
+                    WriteWithSpace(op);
+                    WriteValue(filter.Value);
                     break;
 
                 default:
@@ -242,14 +249,26 @@ namespace QueryFilter.Formatter
                 case FilterOperator.StartsWith:
                     return "LIKE '{0}%'";
 
+                case FilterOperator.NotStartsWith:
+                    return "NOT LIKE '{0}%'";
+
                 case FilterOperator.EndsWith:
                     return "LIKE '%{0}'";
+
+                case FilterOperator.NotEndsWith:
+                    return "NOT LIKE '%{0}'";
 
                 case FilterOperator.Contains:
                     return "LIKE '%{0}%'";
 
+                case FilterOperator.NotContains:
+                    return "LIKE '%{0}%'";
+
                 case FilterOperator.IsContainedIn:
-                    return "IN ({0})";
+                    return "IN ";
+
+                case FilterOperator.NotIsContainedIn:
+                    return "NOT IN ";
             }
             return "";
         }
@@ -277,9 +296,24 @@ namespace QueryFilter.Formatter
                         this.Write(value);
                         this.Write("'");
                         break;
-
                     case TypeCode.Object:
-                        throw new NotSupportedException(string.Format("The constant for '{0}' is not supported", value));
+                        if (value.IsGenericList() || value.GetType().IsArray)
+                        {
+                            var arrayLists = JArray.FromObject(value);
+                            Write("(");
+
+                            for (int i = 0; i < arrayLists.Count; i++)
+                            {
+                                var _row = (arrayLists[i] as JValue);
+                                WriteValue(_row.Value.Convert(_row.Value.GetType()));
+
+                                if (i < (arrayLists.Count - 1))
+                                    Write(",");
+                            }
+
+                            Write(")");
+                        }
+                        break;
                     case TypeCode.Single:
                     case TypeCode.Double:
                         string str = value.ToString();
