@@ -107,15 +107,16 @@ namespace QueryFilter.Test
         public void IntMember_FilteredIn_Model_GUID_Test_Success(IEnumerable<StudentModel> studentModels)
         {
             var queryFilter = new QueryFilterModel();
+            var input = Guid.NewGuid();
             queryFilter.FilterDescriptors.Add(new FilterDescriptor()
             {
                 Member = nameof(StudentModel.Age),
                 Operator = FilterOperator.IsContainedIn,
-                Value = new List<Guid>() { Guid.NewGuid() }
+                Value = new List<Guid>() { input }
             });
 
             var result = new PostgreSQLFormatter().Format(queryFilter);
-            Assert.IsTrue(result.Contains("(32,20)"));
+            Assert.IsTrue(result.Contains(input.ToString()));
 
         }
 
