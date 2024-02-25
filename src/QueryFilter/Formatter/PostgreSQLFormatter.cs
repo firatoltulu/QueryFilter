@@ -130,7 +130,22 @@ namespace QueryFilter.Formatter
             {
                 foreach (var item in filters)
                 {
-                    Visit(item);
+                    var isContainedIn = false;
+                    if (item is CompositeFilterDescriptor)
+                    {
+                        var compositeFilter = item as CompositeFilterDescriptor;
+                        var left = compositeFilter.FilterDescriptors.FirstOrDefault();
+
+                        var filter = left as FilterDescriptor;
+                        if (filter.Operator == FilterOperator.IsContainedIn)
+                        {
+                            isContainedIn = true;
+                            filter.Value = Values(compositeFilter).ToList();
+                            Visit(filter);
+                        }
+                    }
+                    if (!isContainedIn)
+                        Visit(item);
                 }
             }
         }
@@ -164,7 +179,6 @@ namespace QueryFilter.Formatter
             if (ex is CompositeFilterDescriptor)
             {
                 var compositeFilter = ex as CompositeFilterDescriptor;
-
                 if (compositeFilter.IsNested)
                     Write(" (");
 
@@ -182,6 +196,26 @@ namespace QueryFilter.Formatter
                 var filter = ex as FilterDescriptor;
                 VisitBinary(filter);
             }
+        }
+
+        private IList<object> Values(CompositeFilterDescriptor filterDescriptor)
+        {
+            List<object> values = new List<object>();
+            foreach (var ex in filterDescriptor.FilterDescriptors)
+            {
+                if (ex is FilterDescriptor)
+                {
+                    var filter = ex as FilterDescriptor;
+                    values.Add(filter.Value);
+                }
+                else
+                {
+                    var compositeFilter = ex as CompositeFilterDescriptor;
+                    values.AddRange(Values(compositeFilter));
+                }
+            }
+            return values;
+
         }
 
         private void VisitBinary(IFilterDescriptor b)
