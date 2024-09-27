@@ -70,7 +70,10 @@ namespace QueryFilter
             {
                 var _value = dic.Split('=');
                 return new KeyValuePair<string, string>(_value[0], _value[1]);
-            }).ToDictionary(x => x.Key, x => x.Value);
+            })
+            .GroupBy(x => x.Key)
+            .Select(x => x.First())
+            .ToDictionary(x => x.Key, x => x.Value);
 
             var take = 10;
             var skip = 0;

@@ -112,11 +112,23 @@ namespace QueryFilter.Test
             {
                 Member = nameof(StudentModel.Age),
                 Operator = FilterOperator.IsContainedIn,
-                Value = new List<Guid>() { input }
+                Value = new List<Guid>() { input, input }
             });
 
             var result = new PostgreSQLFormatter().Format(queryFilter);
             Assert.IsTrue(result.Contains(input.ToString()));
+
+        }
+
+
+        [TestCase("$skip=0&$top=10&$orderby=CreatedOnUtc-desc&$filter=Categories.Id~in~['3ed1eec9-2be8-438b-9ea5-96432fdb4d5c','471a24dc-609e-48b9-8232-c6b201b1286a','57ead40f-08ea-4873-818e-49a178958dea']")]
+
+        public void IntMember_FilteredIn_Model_FromString_Test_Success(string queryFilter)
+        {
+
+            var queryFilterModel = QueryFilterModel.Parse(queryFilter);
+            var result = new PostgreSQLFormatter().Format(queryFilterModel);
+            Assert.IsTrue(result.Contains("3ed1eec9-2be8-438b-9ea5-96432fdb4d5c"));
 
         }
 
