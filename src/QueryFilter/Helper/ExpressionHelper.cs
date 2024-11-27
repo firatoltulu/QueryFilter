@@ -1,9 +1,9 @@
-using System;
-using System.Linq;
-using System.Linq.Expressions;
-
 namespace QueryFilter
 {
+    using System;
+    using System.Linq;
+    using System.Linq.Expressions;
+
     public static class ExpresionHelper
     {
         public static Expression<Func<T, bool>> AndAlso<T>(
@@ -24,18 +24,20 @@ namespace QueryFilter
 
         public static EntityFilterModel<TEntity> ToEntityFilterModel<TEntity>(this QueryFilterModel queryFilter) where TEntity : class
         {
-            Expression<Func<TEntity, bool>> expression = (e => true);
+            Expression<Func<TEntity, bool>> expression = e => true;
 
             if (queryFilter.FilterDescriptors.Count > 0)
+            {
                 expression = expression.AndAlso(ExpressionMethodHelper.GetExpression<TEntity>(queryFilter.FilterDescriptors));
+            }
 
-            EntityFilterModel<TEntity> entityQueryDto = new EntityFilterModel<TEntity>();
-            entityQueryDto.Filter = expression;
-            entityQueryDto.Skip = queryFilter.Skip;
-            entityQueryDto.Take = queryFilter.Top;
-            entityQueryDto.Sorts = string.Join(" ,", queryFilter.SortDescriptors.Select(sort => sort.ToString()));
-
-            return entityQueryDto;
+            return new EntityFilterModel<TEntity>
+            {
+                Filter = expression,
+                Skip = queryFilter.Skip,
+                Take = queryFilter.Top,
+                Sorts = string.Join(" ,", queryFilter.SortDescriptors.Select(sort => sort.ToString()))
+            };
         }
 
         private class ReplaceExpressionVisitor
@@ -53,7 +55,10 @@ namespace QueryFilter
             public override Expression Visit(Expression node)
             {
                 if (node == _oldValue)
+                {
                     return _newValue;
+                }
+
                 return base.Visit(node);
             }
         }

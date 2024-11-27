@@ -7,96 +7,94 @@ using System.Text;
 
 namespace QueryFilter.Formatter
 {
-    public class PostgreSQLFormatter : IQueryFilterSQLFormatter
+    public class PostgreSqlFormatter : IQueryFilterSQLFormatter
     {
-        public PostgreSQLFormatter()
+        public PostgreSqlFormatter()
         {
             _builder = new StringBuilder();
         }
 
-        private StringBuilder _builder = null;
+        private readonly StringBuilder _builder = null;
 
         public string Format(QueryFilterModel command)
         {
-            var formatter = new PostgreSQLFormatter();
-            formatter.select(command.SelectDescriptors);
-            formatter.from(command.From);
+            Select(command.SelectDescriptors);
+            From(command.From);
 
             if (command.FilterDescriptors.Count > 0)
             {
-                formatter.where();
-                formatter.filter(command.FilterDescriptors);
+                Where();
+                Filter(command.FilterDescriptors);
             }
-            formatter.order(command.SortDescriptors);
-            formatter.paged(command.Skip, command.Top);
+            Order(command.SortDescriptors);
+            paged(command.Skip, command.Top);
 
-            return formatter.ToString();
+            return ToString();
         }
 
         public string FormatOnlyCount(QueryFilterModel command)
         {
-            var formatter = new PostgreSQLFormatter();
-            formatter.select(" Count(*) ");
-            formatter.from(command.From);
+            select(" Count(*) ");
+            From(command.From);
 
             if (command.FilterDescriptors.Count > 0)
             {
-                formatter.where();
-                formatter.filter(command.FilterDescriptors);
+                Where();
+                Filter(command.FilterDescriptors);
             }
-            return formatter.ToString();
+            return ToString();
         }
 
         public string FormatOnlyFilter(QueryFilterModel command)
         {
-            var formatter = new PostgreSQLFormatter();
-            formatter.select(command.SelectDescriptors);
-            formatter.from(command.From);
+            var formatter = new PostgreSqlFormatter();
+            Select(command.SelectDescriptors);
+            From(command.From);
             if (command.FilterDescriptors.Count > 0)
             {
-                formatter.where();
-                formatter.filter(command.FilterDescriptors);
+                Where();
+                Filter(command.FilterDescriptors);
             }
-            return formatter.ToString();
+            return ToString();
         }
 
         public override string ToString()
         {
-            return this._builder.ToString();
+            return _builder.ToString();
         }
 
         #region Write
 
         protected void Write(object value)
         {
-            this._builder.AppendFormat("{0}", value);
+            _builder.AppendFormat("{0}", value);
         }
 
         protected void WriteWithSpace(object value)
         {
-            this._builder.AppendFormat(" {0} ", value);
+            _builder.AppendFormat(" {0} ", value);
         }
 
         protected void WriteFormat(string value, params object[] args)
         {
-            this._builder.AppendFormat(value, args);
+            _builder.AppendFormat(value, args);
         }
 
         protected virtual void WriteParameterName(string name)
         {
-            this.Write("@" + name);
+            Write("@" + name);
         }
 
         protected virtual void WriteColumnName(string columnName)
         {
-            this.Write(columnName);
+            Write(columnName);
         }
 
         #endregion Write
 
         #region Formatter
 
-        private void select(IList<SelectDescriptor> selects)
+        private void Select(IList<SelectDescriptor> selects)
         {
             Write(" SELECT ");
             if (selects.Count > 0)
@@ -114,28 +112,34 @@ namespace QueryFilter.Formatter
             Write(fields);
         }
 
-        private void from(string from)
+        private void From(string from)
         {
             WriteFormat(" FROM \"{0}\"  ", from);
         }
 
-        private void where()
+        private void Where()
         {
             Write(" WHERE ");
         }
 
-        private void filter(IList<IFilterDescriptor> filters)
+        private void Filter(IList<IFilterDescriptor> filters)
         {
             if (filters.Count > 0)
             {
                 foreach (var item in filters)
                 {
                     Visit(item);
+                    Write(" AND ");
+                }
+
+                if (_builder.ToString().EndsWith(" AND "))
+                {
+                    _builder.Remove(_builder.Length - 5, 5);
                 }
             }
         }
 
-        private void order(IList<SortDescriptor> orders)
+        private void Order(IList<SortDescriptor> orders)
         {
             if (orders.Count > 0)
             {
@@ -274,24 +278,24 @@ namespace QueryFilter.Formatter
         {
             if (value == null)
             {
-                this.Write("NULL");
+                Write("NULL");
             }
             else if (value.GetType().IsEnum)
             {
-                this.Write(Convert.ChangeType(value, Enum.GetUnderlyingType(value.GetType())));
+                Write(Convert.ChangeType(value, Enum.GetUnderlyingType(value.GetType())));
             }
             else
             {
                 switch (Type.GetTypeCode(value.GetType()))
                 {
                     case TypeCode.Boolean:
-                        this.Write(((bool)value) ? 1 : 0);
+                        Write(((bool)value) ? 1 : 0);
                         break;
 
                     case TypeCode.String:
-                        this.Write("'");
-                        this.Write(value);
-                        this.Write("'");
+                        Write("'");
+                        Write(value);
+                        Write("'");
                         break;
 
                     case TypeCode.Object:
@@ -310,11 +314,12 @@ namespace QueryFilter.Formatter
                             }
 
                             Write(")");
-                        }else if(value is Guid) { 
-                            this.Write("'");
-                            this.Write(value.ToString());
-                            this.Write("'");
-
+                        }
+                        else if (value is Guid)
+                        {
+                            Write("'");
+                            Write(value.ToString());
+                            Write("'");
                         }
 
                         break;
@@ -326,17 +331,17 @@ namespace QueryFilter.Formatter
                         {
                             str += ".0";
                         }
-                        this.Write(str);
+                        Write(str);
                         break;
 
                     case TypeCode.DateTime:
-                        this.Write("'");
-                        this.Write(Convert.ToDateTime(value).ToString("yyyy-MM-dd HH:mm:ss.fff"));
-                        this.Write("'");
+                        Write("'");
+                        Write(Convert.ToDateTime(value).ToString("yyyy-MM-dd HH:mm:ss.fff"));
+                        Write("'");
                         break;
 
                     default:
-                        this.Write(value);
+                        Write(value);
                         break;
                 }
             }

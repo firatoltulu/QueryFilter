@@ -1,16 +1,14 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-
 namespace QueryFilter
 {
-    using Newtonsoft.Json.Linq;
-    using QueryFilter;
+    using System;
+    using System.Collections.Generic;
+    using System.Linq;
     using System.Linq.Dynamic.Core;
+    using Newtonsoft.Json.Linq;
 
     public static class QueryFilterExtension
     {
-        private static IQueryable setSorting<TEntity>(QueryFilterModel queryFilterCommand, IQueryable query)
+        private static IQueryable SetSorting<TEntity>(QueryFilterModel queryFilterCommand, IQueryable query)
         {
             if (queryFilterCommand.SortDescriptors.Count > 0)
             {
@@ -18,30 +16,47 @@ namespace QueryFilter
             }
             else
             {
-                
                 if (queryFilterCommand.GroupDescriptors.Count == 0)
                 {
                     var propertyName = typeof(TEntity).GetProperties()[0].Name;
                     query = query.OrderBy(propertyName);
                 }
                 else
+                {
                     query = query.OrderBy(queryFilterCommand.GroupDescriptors.FirstOrDefault().Member);
+                }
             }
 
             return query;
         }
 
-        public static PagedList<TEntity>QueryFilter<TEntity>(this IEnumerable<TEntity> entities, QueryFilterModel queryFilterCommand)
+        public static IQueryable<TEntity> Query<TEntity>(this IEnumerable<TEntity> entities, QueryFilterModel queryFilterCommand)
             where TEntity : class
         {
-            int totalCount = 0;
+            var entityFilterModel = queryFilterCommand.ToEntityFilterModel<TEntity>();
+            var query = entities.AsQueryable();
+
+            if (entityFilterModel.Filter != null)
+            {
+                query = query.Where(entityFilterModel.Filter);
+            }
+
+            return query;
+        }
+
+        public static PagedList<TEntity> QueryFilter<TEntity>(this IEnumerable<TEntity> entities, QueryFilterModel queryFilterCommand)
+                  where TEntity : class
+        {
+            var totalCount = 0;
             IEnumerable<TEntity> result;
 
             var entityFilterModel = queryFilterCommand.ToEntityFilterModel<TEntity>();
-            var query = entities.AsQueryable<TEntity>();
+            var query = entities.AsQueryable();
 
             if (entityFilterModel.Filter != null)
-                query = query.Where<TEntity>(entityFilterModel.Filter);
+            {
+                query = query.Where(entityFilterModel.Filter);
+            }
 
             if (queryFilterCommand.GroupDescriptors.Count > 0)
             {
@@ -56,22 +71,16 @@ namespace QueryFilter
                 var groupResult = query.GroupBy($"new ({string.Join(",", arrFields)})", "it")
                     .Select($"new({string.Join(",", selectVisitor)})");
 
-                groupResult = setSorting<TEntity>(queryFilterCommand, groupResult);
+                groupResult = SetSorting<TEntity>(queryFilterCommand, groupResult);
                 totalCount = groupResult.Count();
 
                 var transformToEntity = groupResult.Skip(entityFilterModel.Skip).Take(entityFilterModel.Take) as IEnumerable<object>;
 
-                result = transformToEntity.Select((iitem) =>
-                {
-                    var obj = Activator.CreateInstance<TEntity>();
-
-                    //maybe another 
-                    return JObject.FromObject(iitem).ToObject< TEntity>();
-                }).ToList();
+                result = transformToEntity.Select((iitem) => JObject.FromObject(iitem).ToObject<TEntity>()).ToList();
             }
             else
             {
-                query = (IQueryable<TEntity>)setSorting<TEntity>(queryFilterCommand, query);
+                query = (IQueryable<TEntity>)SetSorting<TEntity>(queryFilterCommand, query);
 
                 totalCount = query.Count();
                 result = query.Skip(entityFilterModel.Skip).Take(entityFilterModel.Take).OfType<TEntity>().ToList();
@@ -80,24 +89,8 @@ namespace QueryFilter
             return new PagedList<TEntity>(result, totalCount);
         }
 
-        public static IQueryable<TEntity> Query<TEntity>(this IEnumerable<TEntity> entities, QueryFilterModel queryFilterCommand)
-            where TEntity : class
-        {
-            var entityFilterModel = queryFilterCommand.ToEntityFilterModel<TEntity>();
-            var query = entities.AsQueryable();
-
-            if (entityFilterModel.Filter != null)
-                query = query.Where<TEntity>(entityFilterModel.Filter);
-
-            return query;
-        }
-
         public static PagedList<TEntity> QueryFilter<TEntity>(this IEnumerable<TEntity> entities, string queryFilter)
-            where TEntity : class
-        {
-            return entities.QueryFilter(QueryFilterModel.Parse(queryFilter));
-        }
-
+            where TEntity : class => entities.QueryFilter(QueryFilterModel.Parse(queryFilter));
 
         public static PagedList<TResult> QueryFilter<TSource, TResult>(
             this IEnumerable<TSource> entities,

@@ -3,108 +3,86 @@ using QueryFilter.Formatter;
 using QueryFilter.Test.Model;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 
 namespace QueryFilter.Test
 {
     [TestFixture]
-    public partial class CollectionFormatterTest
+    public class CollectionFormatterTest
     {
-        private static readonly object[] _studentLists =
-        {
-            new object[] {
-                new List<StudentModel> {
-                new StudentModel { Id=Guid.NewGuid() ,Name="Nancy",LastName="Fuller",Age=35, NullValue =1, Birth=new DateTime(2020,11,20), Time=new TimeSpan(13,0,0) },
-                new StudentModel { Name="Andrew",LastName="Leverling",Age=33, NullValue=2,  Start=new DateTime(2020,11,20), Time=new TimeSpan(11,0,0) },
-                new StudentModel { Name="Janet",LastName="Peacock",Age=32 , NullValue=null, Total=1, Time=new TimeSpan(9,0,0)},
-                new StudentModel { Name=null,LastName=string.Empty,Age=93,NullValue=3, Counter=new List<StudentModel>(){
-                    new StudentModel { Name="Nancy",LastName="Fuller",Age=35, NullValue =1, Birth=new DateTime(2020,11,20) }
-                } }
-             }}
-        };
-
-        [TestCaseSource("_studentLists")]
-        public void StringMember_Filtered_Success(IEnumerable<StudentModel> studentModels)
+        [TestCase]
+        public void StringMember_Filtered_Success()
         {
             var queryFilterModel = QueryFilterModel.Parse("$filter=Id~eq~'f55b2c58-bd48-4ace-aaf4-cddc3fc00e13'");
-            var result = new PostgreSQLFormatter().Format(queryFilterModel);
-            
+            var result = new PostgreSqlFormatter().Format(queryFilterModel);
 
             Assert.IsNotEmpty(result);
         }
- 
-        [TestCaseSource("_studentLists")]
-        public void NullDatetimeMember_Filtered_Success(IEnumerable<StudentModel> studentModels)
+
+        [TestCase]
+        public void NullDatetimeMember_Filtered_Success()
         {
             var queryFilterModel = QueryFilterModel.Parse("$filter=Start~eq~datetime'2020-11-20'");
-            var result = new PostgreSQLFormatter().Format(queryFilterModel);
+            var result = new PostgreSqlFormatter().Format(queryFilterModel);
             Assert.IsNotEmpty(result);
         }
 
-        
- 
-
-        [TestCaseSource("_studentLists")]
-        public void NumberMember_FilteredIn_Not_Null_Success(IEnumerable<StudentModel> studentModels)
+        [TestCase]
+        public void NumberMember_FilteredIn_Not_Null_Success()
         {
             var queryFilterModel = QueryFilterModel.Parse("$filter=Age~in~[32]");
-            var result = new PostgreSQLFormatter().Format(queryFilterModel);
+            var result = new PostgreSqlFormatter().Format(queryFilterModel);
             Assert.IsTrue(result.Contains("32.0"));
         }
 
-        [TestCaseSource("_studentLists")]
-        public void StringMember_FilteredIn_Not_Null_Success(IEnumerable<StudentModel> studentModels)
+        [TestCase]
+        public void StringMember_FilteredIn_Not_Null_Success()
         {
             var queryFilterModel = QueryFilterModel.Parse("$filter=Name~in~['Nancy']");
-            var result = new PostgreSQLFormatter().Format(queryFilterModel);
+            var result = new PostgreSqlFormatter().Format(queryFilterModel);
             Assert.IsTrue(result.Contains("Nancy"));
         }
 
-        [TestCaseSource("_studentLists")]
-        public void StringMember_FilteredNotIn_Success(IEnumerable<StudentModel> studentModels)
+        [TestCase]
+        public void StringMember_FilteredNotIn_Success()
         {
             var queryFilterModel = QueryFilterModel.Parse("$filter=Name~notin~['Nancy']");
-            var result = new PostgreSQLFormatter().Format(queryFilterModel);
+            var result = new PostgreSqlFormatter().Format(queryFilterModel);
             Assert.IsTrue(result.Contains("Nancy"));
         }
 
-        [TestCaseSource("_studentLists")]
-        public void StringMember_FilteredNotStartsWith_Success(IEnumerable<StudentModel> studentModels)
+        [TestCase]
+        public void StringMember_FilteredNotStartsWith_Success()
         {
             var queryFilterModel = QueryFilterModel.Parse("$filter=Name~notstartswith~'Nan'");
-            var result = new PostgreSQLFormatter().Format(queryFilterModel);
+            var result = new PostgreSqlFormatter().Format(queryFilterModel);
             Assert.IsTrue(result.Contains("Nan"));
-
         }
 
-        [TestCaseSource("_studentLists")]
-        public void StringMember_FilteredNotEndsWith_Success(IEnumerable<StudentModel> studentModels)
+        [TestCase]
+        public void StringMember_FilteredNotEndsWith_Success()
         {
             var queryFilterModel = QueryFilterModel.Parse("$filter=Name~notendswith~'Nan'");
-            var result = new PostgreSQLFormatter().Format(queryFilterModel);
+            var result = new PostgreSqlFormatter().Format(queryFilterModel);
             Assert.IsTrue(result.Contains("Nan"));
         }
 
-        
-
-        [TestCaseSource("_studentLists")]
-        public void IntMember_FilteredIn_Model_INT_Test_Success(IEnumerable<StudentModel> studentModels)
+        [TestCase]
+        public void IntMember_FilteredIn_Model_INT_Test_Success()
         {
             var queryFilter = new QueryFilterModel();
             queryFilter.FilterDescriptors.Add(new FilterDescriptor()
             {
                 Member = nameof(StudentModel.Age),
                 Operator = FilterOperator.IsContainedIn,
-                Value = new List<int>(){ 32, 20 }
+                Value = new List<int>() { 32, 20 }
             });
 
-            var result = new PostgreSQLFormatter().Format(queryFilter);
+            var result = new PostgreSqlFormatter().Format(queryFilter);
             Assert.IsTrue(result.Contains("(32,20)"));
-
         }
 
-        [TestCaseSource("_studentLists")]
-        public void IntMember_FilteredIn_Model_GUID_Test_Success(IEnumerable<StudentModel> studentModels)
+        [TestCase]
+        public void IntMember_FilteredIn_Model_GUID_Test_Success()
         {
             var queryFilter = new QueryFilterModel();
             var input = Guid.NewGuid();
@@ -115,36 +93,45 @@ namespace QueryFilter.Test
                 Value = new List<Guid>() { input, input }
             });
 
-            var result = new PostgreSQLFormatter().Format(queryFilter);
+            var result = new PostgreSqlFormatter().Format(queryFilter);
             Assert.IsTrue(result.Contains(input.ToString()));
-
         }
-
 
         [TestCase("$skip=0&$top=10&$orderby=CreatedOnUtc-desc&$filter=Categories.Id~in~['3ed1eec9-2be8-438b-9ea5-96432fdb4d5c','471a24dc-609e-48b9-8232-c6b201b1286a','57ead40f-08ea-4873-818e-49a178958dea']")]
-
         public void IntMember_FilteredIn_Model_FromString_Test_Success(string queryFilter)
         {
-
             var queryFilterModel = QueryFilterModel.Parse(queryFilter);
-            var result = new PostgreSQLFormatter().Format(queryFilterModel);
-            Assert.IsTrue(result.Contains("3ed1eec9-2be8-438b-9ea5-96432fdb4d5c"));
-
+            var result = new PostgreSqlFormatter().Format(queryFilterModel);
+            Assert.IsTrue(result.Trim().Equals(" SELECT  *  FROM \"\"   WHERE  \"Categories.Id\"  IN  ('3ed1eec9-2be8-438b-9ea5-96432fdb4d5c','471a24dc-609e-48b9-8232-c6b201b1286a','57ead40f-08ea-4873-818e-49a178958dea') ORDER BY \"CreatedOnUtc\" desc OFFSET 0 ROWS  FETCH NEXT 10 ROWS ONLY ".Trim()));
         }
 
-
-        [TestCaseSource("_studentLists")]
-        public void MultipleOperator_Test_Success(IEnumerable<StudentModel> studentModels)
+        [TestCase]
+        public void MultipleOperator_Test_Success()
         {
             var queryFilterModel = QueryFilterModel.Parse("$filter=(Name~eq~null~and~Age~in~[93])~or~((Name~eq~'Nancy'~and~Age~in~[35]))");
 
-            var result = new PostgreSQLFormatter().Format(queryFilterModel);
+            var result = new PostgreSqlFormatter().Format(queryFilterModel);
 
-            Assert.IsTrue(result.Contains("(93.0)"));
+            Assert.IsTrue(result.Trim().Equals("SELECT  *  FROM \"\"   WHERE  ( \"Name\"  = NULL and  \"Age\"  IN  (93.0))  or  ( \"Name\"  = 'Nancy' and  \"Age\"  IN  (35.0))  OFFSET 0 ROWS  FETCH NEXT 10 ROWS ONLY".Trim()));
             Assert.IsTrue(result.Contains("(35.0)"));
             Assert.IsTrue(result.Contains("Nancy"));
+        }
 
+        [TestCase]
+        public void MultipleOperator_Test_Modified_Model_Success()
+        {
+            var queryFilterModel = QueryFilterModel.Parse("$filter=(Name~eq~null~and~Age~in~[93])~or~((Name~eq~'Nancy'~and~Age~in~[35]))");
 
+            queryFilterModel.FilterDescriptors.Add(new FilterDescriptor
+            {
+                Member = "Name",
+                Operator = FilterOperator.IsEqualTo,
+                Value = "Selcuk"
+            });
+
+            var result = new PostgreSqlFormatter().Format(queryFilterModel);
+
+            Assert.AreEqual(result.Trim(), " SELECT  *  FROM \"\"   WHERE  ( \"Name\"  = NULL and  \"Age\"  IN  (93.0))  or  ( \"Name\"  = 'Nancy' and  \"Age\"  IN  (35.0))  AND  \"Name\"  = 'Selcuk' OFFSET 0 ROWS  FETCH NEXT 10 ROWS ONLY ".Trim());
         }
     }
 }

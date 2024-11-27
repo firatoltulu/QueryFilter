@@ -63,10 +63,10 @@ namespace QueryFilter
 
         public static QueryFilterModel Parse(string queryFilter)
         {
-            if (queryFilter.StartsWith("?"))
+            if (queryFilter.StartsWith('?'))
                 queryFilter = queryFilter.Substring(1);
 
-            var queries = Uri.UnescapeDataString(HttpUtility.UrlDecode(queryFilter)).Split('&').Where(o => o.StartsWith("$")).Select(dic =>
+            var queries = Uri.UnescapeDataString(HttpUtility.UrlDecode(queryFilter)).Split('&').Where(o => o.StartsWith('$')).Select(dic =>
             {
                 var _value = dic.Split('=');
                 return new KeyValuePair<string, string>(_value[0], _value[1]);
