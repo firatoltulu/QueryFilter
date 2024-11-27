@@ -1,94 +1,75 @@
-﻿using Newtonsoft.Json.Linq;
-using System;
-using System.Collections.Generic;
-using System.Globalization;
-using System.Linq;
-using System.Text;
-
 namespace QueryFilter.Formatter
 {
+    using System;
+    using System.Collections.Generic;
+    using System.Linq;
+    using System.Text;
+    using Newtonsoft.Json.Linq;
+
     public class PostgreSqlFormatter : IQueryFilterSQLFormatter
     {
-        public PostgreSqlFormatter()
-        {
-            _builder = new StringBuilder();
-        }
+        public PostgreSqlFormatter() => _builder = new StringBuilder();
 
-        private readonly StringBuilder _builder = null;
+        private readonly StringBuilder _builder;
 
         public string Format(QueryFilterModel command)
         {
-            Select(command.SelectDescriptors);
-            From(command.From);
+            var formatter = new PostgreSqlFormatter();
+            formatter.Select(command.SelectDescriptors);
+            formatter.From(command.From);
 
             if (command.FilterDescriptors.Count > 0)
             {
-                Where();
-                Filter(command.FilterDescriptors);
+                formatter.Where();
+                formatter.Filter(command.FilterDescriptors);
             }
-            Order(command.SortDescriptors);
-            paged(command.Skip, command.Top);
+            formatter.Order(command.SortDescriptors);
+            formatter.paged(command.Skip, command.Top);
 
-            return ToString();
+            return formatter.ToString();
         }
 
         public string FormatOnlyCount(QueryFilterModel command)
         {
-            select(" Count(*) ");
-            From(command.From);
+            var formatter = new PostgreSqlFormatter();
+            formatter.Select(" Count(*) ");
+            formatter.From(command.From);
 
             if (command.FilterDescriptors.Count > 0)
             {
-                Where();
-                Filter(command.FilterDescriptors);
+                formatter.Where();
+                formatter.Filter(command.FilterDescriptors);
             }
-            return ToString();
+            return formatter.ToString();
         }
 
         public string FormatOnlyFilter(QueryFilterModel command)
         {
             var formatter = new PostgreSqlFormatter();
-            Select(command.SelectDescriptors);
+
+            formatter.Select(command.SelectDescriptors);
             From(command.From);
             if (command.FilterDescriptors.Count > 0)
             {
-                Where();
-                Filter(command.FilterDescriptors);
+                formatter.Where();
+                formatter.Filter(command.FilterDescriptors);
             }
-            return ToString();
+            return formatter.ToString();
         }
 
-        public override string ToString()
-        {
-            return _builder.ToString();
-        }
+        public override string ToString() => _builder.ToString();
 
         #region Write
 
-        protected void Write(object value)
-        {
-            _builder.AppendFormat("{0}", value);
-        }
+        protected void Write(object value) => _builder.AppendFormat("{0}", value);
 
-        protected void WriteWithSpace(object value)
-        {
-            _builder.AppendFormat(" {0} ", value);
-        }
+        protected void WriteWithSpace(object value) => _builder.AppendFormat(" {0} ", value);
 
-        protected void WriteFormat(string value, params object[] args)
-        {
-            _builder.AppendFormat(value, args);
-        }
+        protected void WriteFormat(string value, params object[] args) => _builder.AppendFormat(value, args);
 
-        protected virtual void WriteParameterName(string name)
-        {
-            Write("@" + name);
-        }
+        protected virtual void WriteParameterName(string name) => Write("@" + name);
 
-        protected virtual void WriteColumnName(string columnName)
-        {
-            Write(columnName);
-        }
+        protected virtual void WriteColumnName(string columnName) => Write(columnName);
 
         #endregion Write
 
@@ -98,29 +79,24 @@ namespace QueryFilter.Formatter
         {
             Write(" SELECT ");
             if (selects.Count > 0)
+            {
                 Write(string.Join(",", selects.Select(row => row.Member)));
+            }
             else
             {
                 Write(" * ");
-                //Write(" ,Count = COUNT(*) OVER() ");
             }
         }
 
-        private void select(string fields)
+        private void Select(string fields)
         {
             Write(" SELECT ");
             Write(fields);
         }
 
-        private void From(string from)
-        {
-            WriteFormat(" FROM \"{0}\"  ", from);
-        }
+        private void From(string from) => WriteFormat(" FROM \"{0}\"  ", from);
 
-        private void Where()
-        {
-            Write(" WHERE ");
-        }
+        private void Where() => Write(" WHERE ");
 
         private void Filter(IList<IFilterDescriptor> filters)
         {
@@ -170,7 +146,9 @@ namespace QueryFilter.Formatter
                 var compositeFilter = ex as CompositeFilterDescriptor;
 
                 if (compositeFilter.IsNested)
+                {
                     Write(" (");
+                }
 
                 var left = compositeFilter.FilterDescriptors.FirstOrDefault();
                 var right = compositeFilter.FilterDescriptors.LastOrDefault();
@@ -179,7 +157,9 @@ namespace QueryFilter.Formatter
                 Visit(right);
 
                 if (compositeFilter.IsNested)
+                {
                     Write(") ");
+                }
             }
             else if (ex is FilterDescriptor)
             {
@@ -310,7 +290,9 @@ namespace QueryFilter.Formatter
                                 WriteValue(_row.Value.Convert(_row.Value.GetType()));
 
                                 if (i < (arrayLists.Count - 1))
+                                {
                                     Write(",");
+                                }
                             }
 
                             Write(")");
