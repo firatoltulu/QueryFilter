@@ -269,9 +269,8 @@ namespace QueryFilter.Formatter
                 switch (Type.GetTypeCode(value.GetType()))
                 {
                     case TypeCode.Boolean:
-                        Write(((bool)value) ? 1 : 0);
+                        Write(((bool)value) ? "true" : "false");
                         break;
-
                     case TypeCode.String:
                         Write("'");
                         Write(value);

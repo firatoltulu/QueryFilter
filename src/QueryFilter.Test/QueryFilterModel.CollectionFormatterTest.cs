@@ -118,6 +118,17 @@ namespace QueryFilter.Test
         }
 
         [TestCase]
+        public void Bool_Operator_Test_Success()
+        {
+            var queryFilterModel = QueryFilterModel.Parse("$filter=(IsActive~eq~true)");
+
+            var result = new PostgreSqlFormatter().Format(queryFilterModel);
+
+            Assert.IsTrue(result.Trim().Equals(" SELECT  *  FROM \"\"   WHERE  \"IsActive\"  = true OFFSET 0 ROWS  FETCH NEXT 10 ROWS ONLY ".Trim()));
+        
+        }
+
+        [TestCase]
         public void MultipleOperator_Test_Modified_Model_Success()
         {
             var queryFilterModel = QueryFilterModel.Parse("$filter=(Name~eq~null~and~Age~in~[93])~or~((Name~eq~'Nancy'~and~Age~in~[35]))");
