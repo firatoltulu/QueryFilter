@@ -125,7 +125,6 @@ namespace QueryFilter.Test
             var result = new PostgreSqlFormatter().Format(queryFilterModel);
 
             Assert.IsTrue(result.Trim().Equals(" SELECT  *  FROM \"\"   WHERE  \"IsActive\"  = true OFFSET 0 ROWS  FETCH NEXT 10 ROWS ONLY ".Trim()));
-        
         }
 
         [TestCase]
@@ -139,6 +138,16 @@ namespace QueryFilter.Test
                 Operator = FilterOperator.IsEqualTo,
                 Value = "Selcuk"
             });
+
+            var result = new PostgreSqlFormatter().Format(queryFilterModel);
+
+            Assert.AreEqual(result.Trim(), " SELECT  *  FROM \"\"   WHERE  ( \"Name\"  = NULL and  \"Age\"  IN  (93.0))  or  ( \"Name\"  = 'Nancy' and  \"Age\"  IN  (35.0))  AND  \"Name\"  = 'Selcuk' OFFSET 0 ROWS  FETCH NEXT 10 ROWS ONLY ".Trim());
+        }
+
+        [TestCase]
+        public void NotEqual_Empty_Test_Modified_Model_Success()
+        {
+            var queryFilterModel = QueryFilterModel.Parse("$filter=Name~ne~'')");
 
             var result = new PostgreSqlFormatter().Format(queryFilterModel);
 
