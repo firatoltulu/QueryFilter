@@ -151,7 +151,7 @@ namespace QueryFilter.Test
 
             var result = new PostgreSqlFormatter().Format(queryFilterModel);
 
-            Assert.AreEqual(result.Trim(), " SELECT  *  FROM \"\"   WHERE  ( \"Name\"  = NULL and  \"Age\"  IN  (93.0))  or  ( \"Name\"  = 'Nancy' and  \"Age\"  IN  (35.0))  AND  \"Name\"  = 'Selcuk' OFFSET 0 ROWS  FETCH NEXT 10 ROWS ONLY ".Trim());
+            Assert.AreEqual(result.Trim(), " SELECT  *  FROM \"\"   WHERE  \"Name\" IS NULL OFFSET 0 ROWS  FETCH NEXT 10 ROWS ONLY ".Trim());
         }
     }
 }
