@@ -182,7 +182,7 @@ namespace QueryFilter.Formatter
                 case FilterOperator.IsGreaterThanOrEqualTo:
                 case FilterOperator.IsGreaterThan:
                     WriteWithSpace($"\"{filter.Member}\"");
-                    if (filter.Operator == FilterOperator.IsNotEqualTo && (filter.Value == null || string.IsNullOrEmpty(filter.Value.ToString())))
+                    if (filter.Operator == FilterOperator.IsEqualTo && (filter.Value == null || string.IsNullOrEmpty(filter.Value.ToString().Trim())))
                     {
                         Write("IS NULL");
                     }

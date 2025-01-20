@@ -147,7 +147,7 @@ namespace QueryFilter.Test
         [TestCase]
         public void NotEqual_Empty_Test_Modified_Model_Success()
         {
-            var queryFilterModel = QueryFilterModel.Parse("$filter=Name~ne~'')");
+            var queryFilterModel = QueryFilterModel.Parse("$filter=Name~eq~'')");
 
             var result = new PostgreSqlFormatter().Format(queryFilterModel);
 
