@@ -1,6 +1,5 @@
-
 // This source is subject to the GNU General Public License, version 3
-// See https://www.gnu.org/licenses/quick-guide-gplv3.html 
+// See https://www.gnu.org/licenses/quick-guide-gplv3.html
 // All other rights reserved.
 
 namespace QueryFilter
@@ -19,25 +18,23 @@ namespace QueryFilter
         private static readonly string[] Booleans = new[] { "true", "false" };
         private static readonly string[] Functions = new[] { "contains", "endswith", "startswith", "in", "necontains", "notin", "notendswith", "notstartswith" };
 
-        private int currentCharacterIndex;
+        private int _currentCharacterIndex;
         private readonly string input;
 
         public FilterLexer(string input)
         {
-            input = input ?? string.Empty;
+            input ??= string.Empty;
 
             this.input = input.Trim(new[] { Separator });
         }
 
         public IList<FilterToken> Tokenize()
         {
-            List<FilterToken> tokens = new List<FilterToken>();
+            var tokens = new List<FilterToken>();
 
-            while (currentCharacterIndex < input.Length)
+            while (_currentCharacterIndex < input.Length)
             {
-                string result;
-
-                if (TryParseIdentifier(out result))
+                if (TryParseIdentifier(out var result))
                 {
                     tokens.Add(Identifier(result));
                 }
@@ -47,10 +44,14 @@ namespace QueryFilter
                 }
                 else if (TryParseString(out result))
                 {
-                    if (string.IsNullOrEmpty(result) == false)
+                    if (!string.IsNullOrEmpty(result))
+                    {
                         tokens.Add(String(result));
+                    }
                     else
+                    {
                         tokens.Add(NullValue(result));
+                    }
                 }
                 else if (TryParseCharacter(out result, '('))
                 {
@@ -81,65 +82,33 @@ namespace QueryFilter
             return tokens;
         }
 
-        private static bool IsComparisonOperator(string value)
-        {
-            return Array.IndexOf(ComparisonOperators, value) > -1;
-        }
+        private static bool IsComparisonOperator(string value) => Array.IndexOf(ComparisonOperators, value) > -1;
 
-        private static bool IsLogicalOperator(string value)
-        {
-            return Array.IndexOf(LogicalOperators, value) > -1;
-        }
+        private static bool IsLogicalOperator(string value) => Array.IndexOf(LogicalOperators, value) > -1;
 
-        private static bool IsBoolean(string value)
-        {
-            return Array.IndexOf(Booleans, value) > -1;
-        }
+        private static bool IsBoolean(string value) => Array.IndexOf(Booleans, value) > -1;
 
-        private static bool IsNull(string value)
-        {
-            return value.ToLowerInvariant().Equals("null");
-        }
+        private static bool IsNull(string value) => value.Equals("null", StringComparison.InvariantCultureIgnoreCase);
 
-        private static bool IsFunction(string value)
-        {
-            return Array.IndexOf(Functions, value) > -1;
-        }
+        private static bool IsEmpty(string value) => value.Equals("empty", StringComparison.InvariantCultureIgnoreCase);
 
-        private static FilterToken Comma(string result)
-        {
-            return new FilterToken { TokenType = FilterTokenType.Comma, Value = result };
-        }
+        private static bool IsFunction(string value) => Array.IndexOf(Functions, value) > -1;
 
-        private static FilterToken Boolean(string result)
-        {
-            return new FilterToken { TokenType = FilterTokenType.Boolean, Value = result };
-        }
+        private static FilterToken Comma(string result) => new FilterToken { TokenType = FilterTokenType.Comma, Value = result };
 
-        private static FilterToken NullValue(string result)
-        {
-            return new FilterToken { TokenType = FilterTokenType.Null, Value = result };
-        }
+        private static FilterToken Boolean(string result) => new FilterToken { TokenType = FilterTokenType.Boolean, Value = result };
 
-        private static FilterToken RightParenthesis(string result)
-        {
-            return new FilterToken { TokenType = FilterTokenType.RightParenthesis, Value = result };
-        }
+        private static FilterToken NullValue(string result) => new FilterToken { TokenType = FilterTokenType.Null, Value = result };
 
-        private static FilterToken LeftParenthesis(string result)
-        {
-            return new FilterToken { TokenType = FilterTokenType.LeftParenthesis, Value = result };
-        }
+        private static FilterToken EmptyValue(string result) => new FilterToken { TokenType = FilterTokenType.Empty, Value = result };
 
-        private static FilterToken LeftSquareBracket(string result)
-        {
-            return new FilterToken { TokenType = FilterTokenType.LeftSquareBracket, Value = result };
-        }
+        private static FilterToken RightParenthesis(string result) => new FilterToken { TokenType = FilterTokenType.RightParenthesis, Value = result };
 
-        private static FilterToken RightSquareBracket(string result)
-        {
-            return new FilterToken { TokenType = FilterTokenType.RightSquareBracket, Value = result };
-        }
+        private static FilterToken LeftParenthesis(string result) => new FilterToken { TokenType = FilterTokenType.LeftParenthesis, Value = result };
+
+        private static FilterToken LeftSquareBracket(string result) => new FilterToken { TokenType = FilterTokenType.LeftSquareBracket, Value = result };
+
+        private static FilterToken RightSquareBracket(string result) => new FilterToken { TokenType = FilterTokenType.RightSquareBracket, Value = result };
 
         private static FilterToken String(string result)
         {
@@ -147,10 +116,7 @@ namespace QueryFilter
             return new FilterToken { TokenType = FilterTokenType.String, Value = result };
         }
 
-        private static FilterToken Number(string result)
-        {
-            return new FilterToken { TokenType = FilterTokenType.Number, Value = result };
-        }
+        private static FilterToken Number(string result) => new FilterToken { TokenType = FilterTokenType.Number, Value = result };
 
         private FilterToken Date(string result)
         {
@@ -158,22 +124,22 @@ namespace QueryFilter
 
             return new FilterToken { TokenType = FilterTokenType.DateTime, Value = result };
         }
+
         private FilterToken Time(string result)
         {
             TryParseString(out result);
 
             return new FilterToken { TokenType = FilterTokenType.Time, Value = result };
         }
+
         private FilterToken IgnoreCaseString(string result)
         {
             TryParseString(out result);
 
             return new FilterToken { TokenType = FilterTokenType.StringUseIgnoreCase, Value = result };
         }
-        private static FilterToken ComparisonOperator(string result)
-        {
-            return new FilterToken { TokenType = FilterTokenType.ComparisonOperator, Value = result };
-        }
+
+        private static FilterToken ComparisonOperator(string result) => new FilterToken { TokenType = FilterTokenType.ComparisonOperator, Value = result };
 
         private static FilterToken LogicalOperator(string result)
         {
@@ -190,15 +156,9 @@ namespace QueryFilter
             return new FilterToken { TokenType = FilterTokenType.Not, Value = result };
         }
 
-        private static FilterToken Function(string result)
-        {
-            return new FilterToken { TokenType = FilterTokenType.Function, Value = result };
-        }
+        private static FilterToken Function(string result) => new FilterToken { TokenType = FilterTokenType.Function, Value = result };
 
-        private static FilterToken Property(string result)
-        {
-            return new FilterToken { TokenType = FilterTokenType.Property, Value = result };
-        }
+        private static FilterToken Property(string result) => new FilterToken { TokenType = FilterTokenType.Property, Value = result };
 
         private FilterToken Identifier(string result)
         {
@@ -235,7 +195,10 @@ namespace QueryFilter
             {
                 return NullValue(result);
             }
-
+            if (IsEmpty(result))
+            {
+                return EmptyValue(result);
+            }
             if (IsFunction(result))
             {
                 return Function(result);
@@ -382,15 +345,9 @@ namespace QueryFilter
             return true;
         }
 
-        private static bool IsIdentifierPart(char character)
-        {
-            return char.IsLetter(character) || char.IsDigit(character) || character == '_' || character == '$';
-        }
+        private static bool IsIdentifierPart(char character) => char.IsLetter(character) || char.IsDigit(character) || character == '_' || character == '$';
 
-        private static bool IsIdentifierStart(char character)
-        {
-            return char.IsLetter(character) || character == '_' || character == '$' || character == '@';
-        }
+        private static bool IsIdentifierStart(char character) => char.IsLetter(character) || character == '_' || character == '$' || character == '@';
 
         private string Read(Func<char, bool> predicate, StringBuilder result)
         {
@@ -405,16 +362,13 @@ namespace QueryFilter
             return result.ToString();
         }
 
-        private char Peek()
-        {
-            return Peek(0);
-        }
+        private char Peek() => Peek(0);
 
         private char Peek(int chars)
         {
-            if (currentCharacterIndex + chars < input.Length)
+            if (_currentCharacterIndex + chars < input.Length)
             {
-                return input[currentCharacterIndex + chars];
+                return input[_currentCharacterIndex + chars];
             }
 
             return Char.MaxValue;
@@ -422,7 +376,7 @@ namespace QueryFilter
 
         private char Next()
         {
-            currentCharacterIndex++;
+            _currentCharacterIndex++;
             return Peek();
         }
     }

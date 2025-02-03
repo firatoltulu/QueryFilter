@@ -1,34 +1,31 @@
-﻿using Newtonsoft.Json.Linq;
-using System;
-using System.Collections.Generic;
-using System.Globalization;
-using System.Linq;
-using System.Text;
-
 namespace QueryFilter.Formatter
 {
+    using Newtonsoft.Json.Linq;
+    using System;
+    using System.Collections.Generic;
+    using System.Globalization;
+    using System.Linq;
+    using System.Text;
+
     public class SQLFormatter : IQueryFilterSQLFormatter
     {
-        public SQLFormatter()
-        {
-            _builder = new StringBuilder();
-        }
+        public SQLFormatter() => _builder = new StringBuilder();
 
-        private StringBuilder _builder = null;
+        private readonly StringBuilder _builder;
 
         public string Format(QueryFilterModel command)
         {
             var formatter = new SQLFormatter();
-            formatter.select(command.SelectDescriptors);
-            formatter.from(command.From);
+            formatter.Select(command.SelectDescriptors);
+            formatter.From(command.From);
 
             if (command.FilterDescriptors.Count > 0)
             {
-                formatter.where();
-                formatter.filter(command.FilterDescriptors);
+                formatter.Where();
+                formatter.Filter(command.FilterDescriptors);
             }
-            formatter.order(command.SortDescriptors);
-            formatter.paged(command.Skip, command.Top);
+            formatter.Order(command.SortDescriptors);
+            formatter.Paged(command.Skip, command.Top);
 
             return formatter.ToString();
         }
@@ -36,13 +33,13 @@ namespace QueryFilter.Formatter
         public string FormatOnlyCount(QueryFilterModel command)
         {
             var formatter = new SQLFormatter();
-            formatter.select(" Count(*) ");
-            formatter.from(command.From);
+            formatter.Select(" Count(*) ");
+            formatter.From(command.From);
 
             if (command.FilterDescriptors.Count > 0)
             {
-                formatter.where();
-                formatter.filter(command.FilterDescriptors);
+                formatter.Where();
+                formatter.Filter(command.FilterDescriptors);
             }
             return formatter.ToString();
         }
@@ -50,57 +47,41 @@ namespace QueryFilter.Formatter
         public string FormatOnlyFilter(QueryFilterModel command)
         {
             var formatter = new SQLFormatter();
-            formatter.select(command.SelectDescriptors);
-            formatter.from(command.From);
+            formatter.Select(command.SelectDescriptors);
+            formatter.From(command.From);
             if (command.FilterDescriptors.Count > 0)
             {
-                formatter.where();
-                formatter.filter(command.FilterDescriptors);
+                formatter.Where();
+                formatter.Filter(command.FilterDescriptors);
             }
             return formatter.ToString();
         }
 
-        public override string ToString()
-        {
-            return this._builder.ToString();
-        }
+        public override string ToString() => _builder.ToString();
 
         #region Write
 
-        protected void Write(object value)
-        {
-            this._builder.AppendFormat("{0}", value);
-        }
+        protected void Write(object value) => _builder.AppendFormat("{0}", value);
 
-        protected void WriteWithSpace(object value)
-        {
-            this._builder.AppendFormat(" {0} ", value);
-        }
+        protected void WriteWithSpace(object value) => _builder.AppendFormat(" {0} ", value);
 
-        protected void WriteFormat(string value, params object[] args)
-        {
-            this._builder.AppendFormat(value, args);
-        }
+        protected void WriteFormat(string value, params object[] args) => _builder.AppendFormat(value, args);
 
-        protected virtual void WriteParameterName(string name)
-        {
-            this.Write("@" + name);
-        }
+        protected virtual void WriteParameterName(string name) => Write("@" + name);
 
-        protected virtual void WriteColumnName(string columnName)
-        {
-            this.Write(columnName);
-        }
+        protected virtual void WriteColumnName(string columnName) => Write(columnName);
 
         #endregion Write
 
         #region Formatter
 
-        private void select(IList<SelectDescriptor> selects)
+        private void Select(IList<SelectDescriptor> selects)
         {
             Write(" SELECT ");
             if (selects.Count > 0)
+            {
                 Write(string.Join(",", selects.Select(row => row.Member)));
+            }
             else
             {
                 Write(" * ");
@@ -108,23 +89,17 @@ namespace QueryFilter.Formatter
             }
         }
 
-        private void select(string fields)
+        private void Select(string fields)
         {
             Write(" SELECT ");
             Write(fields);
         }
 
-        private void from(string from)
-        {
-            WriteFormat(" FROM {0} ", from);
-        }
+        private void From(string from) => WriteFormat(" FROM {0} ", from);
 
-        private void where()
-        {
-            Write(" WHERE ");
-        }
+        private void Where() => Write(" WHERE ");
 
-        private void filter(IList<IFilterDescriptor> filters)
+        private void Filter(IList<IFilterDescriptor> filters)
         {
             if (filters.Count > 0)
             {
@@ -135,7 +110,7 @@ namespace QueryFilter.Formatter
             }
         }
 
-        private void order(IList<SortDescriptor> orders)
+        private void Order(IList<SortDescriptor> orders)
         {
             if (orders.Count > 0)
             {
@@ -145,7 +120,7 @@ namespace QueryFilter.Formatter
             }
         }
 
-        private void paged(int skip, int top)
+        private void Paged(int skip, int top)
         {
             if (skip > -1)
             {
@@ -165,7 +140,9 @@ namespace QueryFilter.Formatter
                 var compositeFilter = ex as CompositeFilterDescriptor;
 
                 if (compositeFilter.IsNested)
+                {
                     Write(" (");
+                }
 
                 var left = compositeFilter.FilterDescriptors.FirstOrDefault();
                 var right = compositeFilter.FilterDescriptors.LastOrDefault();
@@ -174,7 +151,9 @@ namespace QueryFilter.Formatter
                 Visit(right);
 
                 if (compositeFilter.IsNested)
+                {
                     Write(") ");
+                }
             }
             else if (ex is FilterDescriptor)
             {
@@ -218,9 +197,6 @@ namespace QueryFilter.Formatter
                     WriteWithSpace(op);
                     WriteValue(filter.Value);
                     break;
-
-                default:
-                    break;
             }
         }
 
@@ -259,7 +235,6 @@ namespace QueryFilter.Formatter
                     return "NOT LIKE '%{0}'";
 
                 case FilterOperator.Contains:
-                    return "LIKE '%{0}%'";
 
                 case FilterOperator.NotContains:
                     return "LIKE '%{0}%'";
@@ -277,24 +252,24 @@ namespace QueryFilter.Formatter
         {
             if (value == null)
             {
-                this.Write("NULL");
+                Write("NULL");
             }
             else if (value.GetType().IsEnum)
             {
-                this.Write(Convert.ChangeType(value, Enum.GetUnderlyingType(value.GetType())));
+                Write(Convert.ChangeType(value, Enum.GetUnderlyingType(value.GetType())));
             }
             else
             {
                 switch (Type.GetTypeCode(value.GetType()))
                 {
                     case TypeCode.Boolean:
-                        this.Write(((bool)value) ? 1 : 0);
+                        Write(((bool)value) ? 1 : 0);
                         break;
 
                     case TypeCode.String:
-                        this.Write("'");
-                        this.Write(value);
-                        this.Write("'");
+                        Write("'");
+                        Write(value);
+                        Write("'");
                         break;
                     case TypeCode.Object:
                         if (value.IsGenericList() || value.GetType().IsArray)
@@ -302,43 +277,45 @@ namespace QueryFilter.Formatter
                             var arrayLists = JArray.FromObject(value);
                             Write("(");
 
-                            for (int i = 0; i < arrayLists.Count; i++)
+                            for (var i = 0; i < arrayLists.Count; i++)
                             {
-                                var _row = (arrayLists[i] as JValue);
+                                var _row = arrayLists[i] as JValue;
                                 WriteValue(_row.Value.Convert(_row.Value.GetType()));
 
                                 if (i < (arrayLists.Count - 1))
+                                {
                                     Write(",");
+                                }
                             }
 
                             Write(")");
                         }
                         else if (value is Guid)
                         {
-                            this.Write("'");
-                            this.Write(value.ToString());
-                            this.Write("'");
+                            Write("'");
+                            Write(value.ToString());
+                            Write("'");
 
                         }
                         break;
                     case TypeCode.Single:
                     case TypeCode.Double:
-                        string str = value.ToString();
+                        var str = value.ToString();
                         if (!str.Contains('.'))
                         {
                             str += ".0";
                         }
-                        this.Write(str);
+                        Write(str);
                         break;
 
                     case TypeCode.DateTime:
-                        this.Write("N'");
-                        this.Write(Convert.ToDateTime(value).ToString(new CultureInfo("en-US")));
-                        this.Write("'");
+                        Write("N'");
+                        Write(Convert.ToDateTime(value).ToString(new CultureInfo("en-US")));
+                        Write("'");
                         break;
 
                     default:
-                        this.Write(value);
+                        Write(value);
                         break;
                 }
             }

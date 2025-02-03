@@ -11,18 +11,18 @@ namespace QueryFilter
 
     public class FilterParser
     {
-        private readonly IList<FilterToken> tokens;
-        private int currentTokenIndex;
+        private readonly IList<FilterToken> _tokens;
+        private int _currentTokenIndex;
 
         public FilterParser(string input)
         {
             var lexer = new FilterLexer(input);
-            tokens = lexer.Tokenize();
+            _tokens = lexer.Tokenize();
         }
 
         public IFilterNode Parse()
         {
-            if (tokens.Count > 0)
+            if (_tokens.Count > 0)
             {
                 return Expression();
             }
@@ -30,14 +30,11 @@ namespace QueryFilter
             return null;
         }
 
-        private IFilterNode Expression()
-        {
-            return OrExpression();
-        }
+        private IFilterNode Expression() => OrExpression();
 
         private IFilterNode OrExpression()
         {
-            IFilterNode firstArgument = AndExpression();
+            var firstArgument = AndExpression();
 
             if (Is(FilterTokenType.Or))
             {
@@ -60,7 +57,7 @@ namespace QueryFilter
 
         private IFilterNode AndExpression()
         {
-            IFilterNode firstArgument = ComparisonExpression();
+            var firstArgument = ComparisonExpression();
 
             if (Is(FilterTokenType.And))
             {
@@ -72,7 +69,7 @@ namespace QueryFilter
 
         private IFilterNode ComparisonExpression()
         {
-            IFilterNode firstArgument = PrimaryExpression();
+            var firstArgument = PrimaryExpression();
 
             if (Is(FilterTokenType.ComparisonOperator) || Is(FilterTokenType.Function))
             {
@@ -102,6 +99,11 @@ namespace QueryFilter
             if (Is(FilterTokenType.Null))
             {
                 return ParseNull();
+            }
+
+            if (Is(FilterTokenType.Empty))
+            {
+                return ParseEmpty();
             }
 
             if (Is(FilterTokenType.DateTime))
@@ -141,7 +143,7 @@ namespace QueryFilter
         private IFilterNode ParseOrExpression(IFilterNode firstArgument)
         {
             Expect(FilterTokenType.Or);
-            IFilterNode secondArgument = OrExpression();
+            var secondArgument = OrExpression();
             return new OrNode
             {
                 First = firstArgument,
@@ -153,9 +155,9 @@ namespace QueryFilter
         {
             if (Is(FilterTokenType.ComparisonOperator))
             {
-                FilterToken comparison = Expect(FilterTokenType.ComparisonOperator);
+                var comparison = Expect(FilterTokenType.ComparisonOperator);
 
-                IFilterNode secondArgument = PrimaryExpression();
+                var secondArgument = PrimaryExpression();
 
                 return new ComparisonNode
                 {
@@ -165,7 +167,7 @@ namespace QueryFilter
                 };
             }
 
-            FilterToken function = Expect(FilterTokenType.Function);
+            var function = Expect(FilterTokenType.Function);
 
             var functionNode = new FunctionNode
             {
@@ -181,7 +183,7 @@ namespace QueryFilter
         private IFilterNode ParseAndExpression(IFilterNode firstArgument)
         {
             Expect(FilterTokenType.And);
-            IFilterNode secondArgument = ComparisonExpression();
+            var secondArgument = ComparisonExpression();
             return new AndNode
             {
                 First = firstArgument,
@@ -191,7 +193,7 @@ namespace QueryFilter
 
         private IFilterNode ParseStringExpression()
         {
-            FilterToken stringToken = Expect(FilterTokenType.String);
+            var stringToken = Expect(FilterTokenType.String);
 
             return new StringNode
             {
@@ -200,7 +202,7 @@ namespace QueryFilter
         }
         private IFilterNode ParseStringExpressionUseIgnoreCase()
         {
-            FilterToken stringToken = Expect(FilterTokenType.StringUseIgnoreCase);
+            var stringToken = Expect(FilterTokenType.StringUseIgnoreCase);
 
             return new StringNode
             {
@@ -211,11 +213,12 @@ namespace QueryFilter
 
         private IFilterNode ParseArrayExpression()
         {
-            FilterToken stringToken = Expect(FilterTokenType.LeftSquareBracket);
+            var stringToken = Expect(FilterTokenType.LeftSquareBracket);
 
-            List<object> list = new List<object>();
-
-            list.Add(Expression());
+            var list = new List<object>
+            {
+                Expression()
+            };
 
             while (Is(FilterTokenType.Comma))
             {
@@ -234,7 +237,7 @@ namespace QueryFilter
 
         private IFilterNode ParseBoolean()
         {
-            FilterToken stringToken = Expect(FilterTokenType.Boolean);
+            var stringToken = Expect(FilterTokenType.Boolean);
 
             return new BooleanNode
             {
@@ -244,7 +247,7 @@ namespace QueryFilter
 
         private IFilterNode ParseNull()
         {
-            FilterToken stringToken = Expect(FilterTokenType.Null);
+            var stringToken = Expect(FilterTokenType.Null);
 
             return new BooleanNode
             {
@@ -252,9 +255,19 @@ namespace QueryFilter
             };
         }
 
+        private IFilterNode ParseEmpty()
+        {
+            Expect(FilterTokenType.Empty);
+
+            return new StringNode
+            {
+                Value = string.Empty
+            };
+        }
+
         private IFilterNode ParseNumberExpression()
         {
-            FilterToken number = Expect(FilterTokenType.Number);
+            var number = Expect(FilterTokenType.Number);
 
             return new NumberNode
             {
@@ -264,7 +277,7 @@ namespace QueryFilter
 
         private IFilterNode ParsePropertyExpression()
         {
-            FilterToken property = Expect(FilterTokenType.Property);
+            var property = Expect(FilterTokenType.Property);
 
             return new PropertyNode
             {
@@ -274,7 +287,7 @@ namespace QueryFilter
 
         private IFilterNode ParseDateTimeExpression()
         {
-            FilterToken dateTime = Expect(FilterTokenType.DateTime);
+            var dateTime = Expect(FilterTokenType.DateTime);
             var acceptDates = new string[] { "dd.MM.yyyy", "dd.MM.yyyy HH:mm", "dd.MM.yyyy HH:mm:ss", "yyyy-MM-dd", "yyyy-MM-ddTHH:mm:ss", "yyyy-MM-ddTHH:mm:ssZ" };
             return new DateTimeNode
             {
@@ -283,7 +296,7 @@ namespace QueryFilter
         }
         private IFilterNode ParseTimeExpression()
         {
-            FilterToken dateTime = Expect(FilterTokenType.Time);
+            var dateTime = Expect(FilterTokenType.Time);
             var acceptDates = new string[] { "h\\:mm", "g" };
             return new TimeNode
             {
@@ -302,7 +315,7 @@ namespace QueryFilter
 
         private IFilterNode ParseFunctionExpression()
         {
-            FilterToken function = Expect(FilterTokenType.Function);
+            var function = Expect(FilterTokenType.Function);
 
             var functionNode = new FunctionNode
             {
@@ -329,22 +342,22 @@ namespace QueryFilter
                 throw new FilterParserException("Expected " + tokenType);
             }
 
-            FilterToken token = Peek();
-            currentTokenIndex++;
+            var token = Peek();
+            _currentTokenIndex++;
             return token;
         }
 
         private bool Is(FilterTokenType tokenType)
         {
-            FilterToken token = Peek();
+            var token = Peek();
             return token != null && token.TokenType == tokenType;
         }
 
         private FilterToken Peek()
         {
-            if (currentTokenIndex < tokens.Count)
+            if (_currentTokenIndex < _tokens.Count)
             {
-                return tokens[currentTokenIndex];
+                return _tokens[_currentTokenIndex];
             }
 
             return null;

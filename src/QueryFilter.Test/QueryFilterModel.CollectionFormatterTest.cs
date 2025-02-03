@@ -153,5 +153,15 @@ namespace QueryFilter.Test
 
             Assert.AreEqual(result.Trim(), " SELECT  *  FROM \"\"   WHERE  \"Name\" IS NULL OFFSET 0 ROWS  FETCH NEXT 10 ROWS ONLY ".Trim());
         }
+
+        [TestCase]
+        public void NotEqual_Empty_Keyword_Test_Modified_Model_Success()
+        {
+            var queryFilterModel = QueryFilterModel.Parse("$filter=Name~eq~empty)");
+
+            var result = new PostgreSqlFormatter().Format(queryFilterModel);
+
+            Assert.AreEqual(result.Trim(), " SELECT  *  FROM \"\"   WHERE  \"Name\"  = '' OFFSET 0 ROWS  FETCH NEXT 10 ROWS ONLY ".Trim());
+        }
     }
 }
