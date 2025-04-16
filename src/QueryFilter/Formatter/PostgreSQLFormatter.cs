@@ -80,7 +80,20 @@ namespace QueryFilter.Formatter
             Write(" SELECT ");
             if (selects.Count > 0)
             {
-                Write(string.Join(",", selects.Select(row => row.Member)));
+                var selectColumns = new List<string>();
+                foreach (var select in selects)
+                {
+                    if (QueryFilterModel.Current?.JsonbColumns?.Contains(select.Member) == true)
+                    {
+                        // For JSON columns, use JSON extraction syntax
+                        selectColumns.Add($"{select.Member}::text as {select.Member}");
+                    }
+                    else
+                    {
+                        selectColumns.Add(select.Member);
+                    }
+                }
+                Write(string.Join(",", selectColumns));
             }
             else
             {
@@ -139,74 +152,121 @@ namespace QueryFilter.Formatter
 
         #region prepaire
 
-        private void Visit(IFilterDescriptor ex)
+        private void Visit(IFilterDescriptor filter)
         {
-            if (ex is CompositeFilterDescriptor)
+            if (filter is CompositeFilterDescriptor)
             {
-                var compositeFilter = ex as CompositeFilterDescriptor;
-
-                if (compositeFilter.IsNested)
+                var compositeFilter = filter as CompositeFilterDescriptor;
+                if (compositeFilter.FilterDescriptors.Count > 0)
                 {
-                    Write(" (");
-                }
+                    if (compositeFilter.IsNested)
+                    {
+                        Write(" ( ");
+                    }
 
-                var left = compositeFilter.FilterDescriptors.FirstOrDefault();
-                var right = compositeFilter.FilterDescriptors.LastOrDefault();
-                Visit(left);
-                Write(string.Format(" {0} ", compositeFilter.LogicalOperator.ToString().ToLower()));
-                Visit(right);
+                    for (int i = 0; i < compositeFilter.FilterDescriptors.Count; i++)
+                    {
+                        Visit(compositeFilter.FilterDescriptors[i]);
 
-                if (compositeFilter.IsNested)
-                {
-                    Write(") ");
+                        if (i < compositeFilter.FilterDescriptors.Count - 1)
+                        {
+                            switch (compositeFilter.LogicalOperator)
+                            {
+                                case FilterCompositionLogicalOperator.And:
+                                    Write(" and ");
+                                    break;
+
+                                case FilterCompositionLogicalOperator.Or:
+                                    Write(" or ");
+                                    break;
+                            }
+                        }
+                    }
+
+                    if (compositeFilter.IsNested)
+                    {
+                        Write(" ) ");
+                    }
                 }
             }
-            else if (ex is FilterDescriptor)
+            else
             {
-                var filter = ex as FilterDescriptor;
-                VisitBinary(filter);
+                VisitBinary(filter as FilterDescriptor);
             }
         }
 
-        private void VisitBinary(IFilterDescriptor b)
+        private void VisitBinary(FilterDescriptor filter)
         {
-            var filter = b as FilterDescriptor;
-
-            var op = GetOperator(filter.Operator);
-            switch (filter.Operator)
+            if (filter != null)
             {
-                case FilterOperator.IsLessThan:
-                case FilterOperator.IsLessThanOrEqualTo:
-                case FilterOperator.IsEqualTo:
-                case FilterOperator.IsNotEqualTo:
-                case FilterOperator.IsGreaterThanOrEqualTo:
-                case FilterOperator.IsGreaterThan:
-                    WriteWithSpace($"\"{filter.Member}\"");
-                    if (filter.Value != null)
+                // Check if this is a JSON column
+                bool isJsonColumn = QueryFilterModel.Current?.JsonbColumns?.Contains(filter.Member) == true;
+
+                if (isJsonColumn)
+                {
+                    // Handle JSON column filtering
+                    Write(" ");
+                    Write(filter.Member);
+                    Write(" ");
+                    
+                    switch (filter.Operator)
                     {
-                        WriteWithSpace(op);
+                        case FilterOperator.IsEqualTo:
+                            Write("::jsonb @> ");
+                            WriteJsonValue(filter.Value);
+                            break;
+                        case FilterOperator.IsNotEqualTo:
+                            Write("::jsonb @> ");
+                            WriteJsonValue(filter.Value);
+                            Write(" IS NOT TRUE");
+                            break;
+                        case FilterOperator.Contains:
+                            Write("::text LIKE ");
+                            Write("'%");
+                            Write(filter.Value);
+                            Write("%'");
+                            break;
+                        case FilterOperator.IsContainedIn:
+                            Write("::jsonb <@ ");
+                            WriteJsonValue(filter.Value);
+                            break;
+                        case FilterOperator.NotIsContainedIn:
+                            Write("::jsonb <@ ");
+                            WriteJsonValue(filter.Value);
+                            Write(" IS NOT TRUE");
+                            break;
+                        default:
+                            // For other operators, fall back to text comparison
+                            Write("::text ");
+                            Write(GetOperator(filter.Operator));
+                            WriteValue(filter.Value);
+                            break;
                     }
-                    WriteValue(filter.Value);
-                    break;
-                case FilterOperator.StartsWith:
-                case FilterOperator.EndsWith:
-                case FilterOperator.Contains:
-                case FilterOperator.NotEndsWith:
-                case FilterOperator.NotStartsWith:
+                }
+                else
+                {
+                    // Standard column handling
+                    Write(" \"");
+                    Write(filter.Member);
+                    Write("\" ");
 
-                    WriteWithSpace($"\"{filter.Member}\"");
-                    WriteWithSpace(string.Format(op, filter.Value.ToString()));
-                    break;
-
-                case FilterOperator.NotIsContainedIn:
-                case FilterOperator.IsContainedIn:
-                    WriteWithSpace($"\"{filter.Member}\"");
-                    WriteWithSpace(op);
-                    WriteValue(filter.Value);
-                    break;
-
-                default:
-                    break;
+                    if (filter.Value == null)
+                    {
+                        if (filter.Operator == FilterOperator.IsEqualTo)
+                        {
+                            Write("IS NULL");
+                        }
+                        else if (filter.Operator == FilterOperator.IsNotEqualTo)
+                        {
+                            Write("IS NOT NULL");
+                        }
+                    }
+                    else
+                    {
+                        Write(GetOperator(filter.Operator));
+                        WriteValue(filter.Value);
+                    }
+                }
             }
         }
 
@@ -325,6 +385,103 @@ namespace QueryFilter.Formatter
 
                     default:
                         Write(value);
+                        break;
+                }
+            }
+        }
+
+        protected virtual void WriteJsonValue(object value)
+        {
+            if (value == null)
+            {
+                Write("'null'::jsonb");
+            }
+            else if (value.GetType().IsEnum)
+            {
+                Write("'");
+                Write(Convert.ChangeType(value, Enum.GetUnderlyingType(value.GetType())));
+                Write("'::jsonb");
+            }
+            else
+            {
+                switch (Type.GetTypeCode(value.GetType()))
+                {
+                    case TypeCode.Boolean:
+                        Write("'");
+                        Write(((bool)value) ? "true" : "false");
+                        Write("'::jsonb");
+                        break;
+                    case TypeCode.String:
+                        Write("'\"");
+                        Write(value);
+                        Write("\"'::jsonb");
+                        break;
+                    case TypeCode.Object:
+                        if (value.IsGenericList() || value.GetType().IsArray)
+                        {
+                            var arrayLists = JArray.FromObject(value);
+                            Write("'[");
+                            
+                            for (int i = 0; i < arrayLists.Count; i++)
+                            {
+                                var _row = (arrayLists[i] as JValue);
+                                var rowValue = _row.Value.Convert(_row.Value.GetType());
+                                
+                                if (rowValue is string)
+                                {
+                                    Write("\"");
+                                    Write(rowValue);
+                                    Write("\"");
+                                }
+                                else
+                                {
+                                    Write(rowValue);
+                                }
+
+                                if (i < (arrayLists.Count - 1))
+                                {
+                                    Write(",");
+                                }
+                            }
+                            
+                            Write("]'::jsonb");
+                        }
+                        else if (value is Guid)
+                        {
+                            Write("'\"");
+                            Write(value.ToString());
+                            Write("\"'::jsonb");
+                        }
+                        else
+                        {
+                            // Attempt to serialize complex object to JSON
+                            Write("'");
+                            Write(Newtonsoft.Json.JsonConvert.SerializeObject(value));
+                            Write("'::jsonb");
+                        }
+                        break;
+                    case TypeCode.Single:
+                    case TypeCode.Double:
+                    case TypeCode.Int16:
+                    case TypeCode.Int32:
+                    case TypeCode.Int64:
+                    case TypeCode.UInt16:
+                    case TypeCode.UInt32:
+                    case TypeCode.UInt64:
+                    case TypeCode.Decimal:
+                        Write("'");
+                        Write(value);
+                        Write("'::jsonb");
+                        break;
+                    case TypeCode.DateTime:
+                        Write("'\"");
+                        Write(Convert.ToDateTime(value).ToString("yyyy-MM-dd HH:mm:ss.fff"));
+                        Write("\"'::jsonb");
+                        break;
+                    default:
+                        Write("'");
+                        Write(value);
+                        Write("'::jsonb");
                         break;
                 }
             }

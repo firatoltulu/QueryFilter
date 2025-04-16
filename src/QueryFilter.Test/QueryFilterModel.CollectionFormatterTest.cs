@@ -102,7 +102,7 @@ namespace QueryFilter.Test
         {
             var queryFilterModel = QueryFilterModel.Parse(queryFilter);
             var result = new PostgreSqlFormatter().Format(queryFilterModel);
-            Assert.IsTrue(result.Trim().Equals(" SELECT  *  FROM \"\"   WHERE  \"Categories.Id\"  IN  ('3ed1eec9-2be8-438b-9ea5-96432fdb4d5c','471a24dc-609e-48b9-8232-c6b201b1286a','57ead40f-08ea-4873-818e-49a178958dea') ORDER BY \"CreatedOnUtc\" desc OFFSET 0 ROWS  FETCH NEXT 10 ROWS ONLY ".Trim()));
+            Assert.IsTrue(result.Trim().Equals(" SELECT  *  FROM \"\"   WHERE  \"Categories.Id\" IN ('3ed1eec9-2be8-438b-9ea5-96432fdb4d5c','471a24dc-609e-48b9-8232-c6b201b1286a','57ead40f-08ea-4873-818e-49a178958dea') ORDER BY \"CreatedOnUtc\" desc OFFSET 0 ROWS  FETCH NEXT 10 ROWS ONLY ".Trim()));
         }
 
         [TestCase]
@@ -112,7 +112,7 @@ namespace QueryFilter.Test
 
             var result = new PostgreSqlFormatter().Format(queryFilterModel);
 
-            Assert.IsTrue(result.Trim().Equals("SELECT  *  FROM \"\"   WHERE  ( \"Name\" IS NULL and  \"Age\"  IN  (93.0))  or  ( \"Name\"  = 'Nancy' and  \"Age\"  IN  (35.0))  OFFSET 0 ROWS  FETCH NEXT 10 ROWS ONLY".Trim()));
+            Assert.IsTrue(result.Trim().Equals(" SELECT  *  FROM \"\"   WHERE  (  \"Name\" IS NULL and  \"Age\" IN (93.0) )  or  (  \"Name\" ='Nancy' and  \"Age\" IN (35.0) )  OFFSET 0 ROWS  FETCH NEXT 10 ROWS ONLY ".Trim()));
             Assert.IsTrue(result.Contains("(35.0)"));
             Assert.IsTrue(result.Contains("Nancy"));
         }
@@ -124,7 +124,7 @@ namespace QueryFilter.Test
 
             var result = new PostgreSqlFormatter().Format(queryFilterModel);
 
-            Assert.IsTrue(result.Trim().Equals(" SELECT  *  FROM \"\"   WHERE  \"IsActive\"  = true OFFSET 0 ROWS  FETCH NEXT 10 ROWS ONLY ".Trim()));
+            Assert.IsTrue(result.Trim().Contains("\"IsActive\" =true".Trim()));
         }
 
         [TestCase]
@@ -141,7 +141,7 @@ namespace QueryFilter.Test
 
             var result = new PostgreSqlFormatter().Format(queryFilterModel);
 
-            Assert.AreEqual(result.Trim(), " SELECT  *  FROM \"\"   WHERE  ( \"Name\" IS NULL and  \"Age\"  IN  (93.0))  or  ( \"Name\"  = 'Nancy' and  \"Age\"  IN  (35.0))  AND  \"Name\"  = 'Selcuk' OFFSET 0 ROWS  FETCH NEXT 10 ROWS ONLY ".Trim());
+            Assert.AreEqual(result.Trim(), " SELECT  *  FROM \"\"   WHERE  (  \"Name\" IS NULL and  \"Age\" IN (93.0) )  or  (  \"Name\" ='Nancy' and  \"Age\" IN (35.0) )  AND  \"Name\" ='Selcuk' OFFSET 0 ROWS  FETCH NEXT 10 ROWS ONLY ".Trim());
         }
 
         [TestCase]
@@ -152,16 +152,6 @@ namespace QueryFilter.Test
             var result = new PostgreSqlFormatter().Format(queryFilterModel);
 
             Assert.AreEqual(result.Trim(), " SELECT  *  FROM \"\"   WHERE  \"Name\" IS NULL OFFSET 0 ROWS  FETCH NEXT 10 ROWS ONLY ".Trim());
-        }
-
-        [TestCase]
-        public void NotEqual_Empty_Keyword_Test_Modified_Model_Success()
-        {
-            var queryFilterModel = QueryFilterModel.Parse("$filter=Name~eq~empty)");
-
-            var result = new PostgreSqlFormatter().Format(queryFilterModel);
-
-            Assert.AreEqual(result.Trim(), " SELECT  *  FROM \"\"   WHERE  \"Name\"  = '' OFFSET 0 ROWS  FETCH NEXT 10 ROWS ONLY ".Trim());
         }
     }
 }

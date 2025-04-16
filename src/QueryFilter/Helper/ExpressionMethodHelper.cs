@@ -1,47 +1,44 @@
-﻿using Newtonsoft.Json.Linq;
-using System;
-using System.Collections;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
-using System.Globalization;
-using System.Linq;
-using System.Linq.Expressions;
-using System.Reflection;
-
 namespace QueryFilter
 {
+    using Newtonsoft.Json.Linq;
+    using System;
+    using System.Collections;
+    using System.Collections.Generic;
+    using System.ComponentModel;
+    using System.Data;
+    using System.Globalization;
+    using System.Linq;
+    using System.Linq.Expressions;
+    using System.Reflection;
+
     public static class ExpressionMethodHelper
     {
-        private static MethodInfo containsMethod = typeof(string).GetMethod("Contains", new[] { typeof(string) });
-        private static MethodInfo trimMethod = typeof(string).GetMethod("Trim", new Type[0]);
-        private static MethodInfo toLowerMethod = typeof(string).GetMethod("ToLower", new Type[0]);
-        private static MethodInfo startsWithMethod = typeof(string).GetMethod("StartsWith", new[] { typeof(string) });
-        private static MethodInfo endsWithMethod = typeof(string).GetMethod("EndsWith", new[] { typeof(string) });
-        private static MethodInfo isNullOrEmpty = typeof(string).GetMethod("IsNullOrEmpty", new[] { typeof(string) });
-        private static MethodInfo CountMethod = typeof(Enumerable).GetMethods().First(method => method.Name == "Count" && method.GetParameters().Length == 1);
-
+        private static readonly MethodInfo ContainsMethod = typeof(string).GetMethod("Contains", new[] { typeof(string) });
+        private static readonly MethodInfo TrimMethod = typeof(string).GetMethod("Trim", new Type[0]);
+        private static readonly MethodInfo ToLowerMethod = typeof(string).GetMethod("ToLower", new Type[0]);
+        private static readonly MethodInfo StartsWithMethod = typeof(string).GetMethod("StartsWith", new[] { typeof(string) });
+        private static readonly MethodInfo EndsWithMethod = typeof(string).GetMethod("EndsWith", new[] { typeof(string) });
+        private static readonly MethodInfo CountMethod = typeof(Enumerable).GetMethods().First(method => method.Name == "Count" && method.GetParameters().Length == 1);
         private static readonly Dictionary<FilterOperator, Func<Expression, Expression, Expression>> Expressions;
 
-        static ExpressionMethodHelper()
-        {
-            Expressions = new Dictionary<FilterOperator, Func<Expression, Expression, Expression>>();
-            Expressions.Add(FilterOperator.IsEqualTo, (member, constant) => Expression.Equal(member, constant));
-            Expressions.Add(FilterOperator.IsNotEqualTo, (member, constant) => Expression.NotEqual(member, constant));
-            Expressions.Add(FilterOperator.IsGreaterThan, (member, constant) => Expression.GreaterThan(member, constant));
-            Expressions.Add(FilterOperator.IsGreaterThanOrEqualTo, (member, constant) => Expression.GreaterThanOrEqual(member, constant));
-            Expressions.Add(FilterOperator.IsLessThan, (member, constant) => Expression.LessThan(member, constant));
-            Expressions.Add(FilterOperator.IsLessThanOrEqualTo, (member, constant) => Expression.LessThanOrEqual(member, constant));
-            Expressions.Add(FilterOperator.StartsWith, (member, constant) => Expression.Call(member, startsWithMethod, constant));
-            Expressions.Add(FilterOperator.NotStartsWith, (member, constant) => Expression.Not(Expression.Call(member, startsWithMethod, constant)));
-            Expressions.Add(FilterOperator.EndsWith, (member, constant) => Expression.Call(member, endsWithMethod, constant));
-            Expressions.Add(FilterOperator.NotEndsWith, (member, constant) => Expression.Not(Expression.Call(member, endsWithMethod, constant)));
-            Expressions.Add(FilterOperator.Contains, (member, constant) => Expression.Call(member, containsMethod, constant));
-            Expressions.Add(FilterOperator.NotContains, (member, constant) => Expression.Not(Expression.Call(member, containsMethod, constant)));
-            Expressions.Add(FilterOperator.IsContainedIn, (member, constant) => In(member, constant));
-            Expressions.Add(FilterOperator.NotIsContainedIn, (member, constant) => NotIn(member, constant));
-            Expressions.Add(FilterOperator.Count, (member, constant) => Expression.Call(member, CountMethod, constant));
-        }
+        static ExpressionMethodHelper() => Expressions = new Dictionary<FilterOperator, Func<Expression, Expression, Expression>>
+            {
+                { FilterOperator.IsEqualTo, (member, constant) => Expression.Equal(member, constant) },
+                { FilterOperator.IsNotEqualTo, (member, constant) => Expression.NotEqual(member, constant) },
+                { FilterOperator.IsGreaterThan, (member, constant) => Expression.GreaterThan(member, constant) },
+                { FilterOperator.IsGreaterThanOrEqualTo, (member, constant) => Expression.GreaterThanOrEqual(member, constant) },
+                { FilterOperator.IsLessThan, (member, constant) => Expression.LessThan(member, constant) },
+                { FilterOperator.IsLessThanOrEqualTo, (member, constant) => Expression.LessThanOrEqual(member, constant) },
+                { FilterOperator.StartsWith, (member, constant) => Expression.Call(member, StartsWithMethod, constant) },
+                { FilterOperator.NotStartsWith, (member, constant) => Expression.Not(Expression.Call(member, StartsWithMethod, constant)) },
+                { FilterOperator.EndsWith, (member, constant) => Expression.Call(member, EndsWithMethod, constant) },
+                { FilterOperator.NotEndsWith, (member, constant) => Expression.Not(Expression.Call(member, EndsWithMethod, constant)) },
+                { FilterOperator.Contains, (member, constant) => Expression.Call(member, ContainsMethod, constant) },
+                { FilterOperator.NotContains, (member, constant) => Expression.Not(Expression.Call(member, ContainsMethod, constant)) },
+                { FilterOperator.IsContainedIn, (member, constant) => In(member, constant) },
+                { FilterOperator.NotIsContainedIn, (member, constant) => NotIn(member, constant) },
+                { FilterOperator.Count, (member, constant) => Expression.Call(member, CountMethod, constant) },
+            };
 
         public static Expression<Func<T, bool>> GetExpression<T>(IList<IFilterDescriptor> filter, FilterCompositionLogicalOperator connector = FilterCompositionLogicalOperator.And) where T : class
         {
@@ -49,7 +46,7 @@ namespace QueryFilter
             Expression expression = Expression.Constant(true);
             foreach (var statement in filter)
             {
-                Expression expr = Visit(param, statement);
+                var expr = Visit(param, statement);
                 expression = CombineExpressions(expression, expr, connector);
             }
 
@@ -82,14 +79,10 @@ namespace QueryFilter
                 expr = GetExpression(param, filter);
             }
 
-            expression = CombineExpressions(expression, expr, connector);
-            return expression;
+            return CombineExpressions(expression, expr, connector);
         }
 
-        private static Expression CombineExpressions(Expression expr1, Expression expr2, FilterCompositionLogicalOperator connector)
-        {
-            return connector == FilterCompositionLogicalOperator.And ? Expression.AndAlso(expr1, expr2) : Expression.OrElse(expr1, expr2);
-        }
+        private static Expression CombineExpressions(Expression expr1, Expression expr2, FilterCompositionLogicalOperator connector) => connector == FilterCompositionLogicalOperator.And ? Expression.AndAlso(expr1, expr2) : Expression.OrElse(expr1, expr2);
 
         private static Expression GetExpression(ParameterExpression param, FilterDescriptor statement, string propertyName = null)
         {
@@ -97,10 +90,11 @@ namespace QueryFilter
             Expression resultExpr = null;
 
             if (Nullable.GetUnderlyingType(member.Type) != null && statement.Value != null)
+            {
                 resultExpr = Expression.Property(member, "HasValue");
+            }
 
             var inOperator = new List<FilterOperator>() { FilterOperator.IsContainedIn, FilterOperator.NotIsContainedIn };
-
 
             var constant = Expression.Constant(statement.Value);
 
@@ -115,50 +109,39 @@ namespace QueryFilter
                 if (member.Type == typeof(string))
                 {
                     if (constant.Value != null)
+                    {
                         expressionInvoke = expressionOperator.Invoke(member.TrimToLower(), valueAs.TrimToLower())
-                            .AddNullCheck(member);
+                                                .AddNullCheck(member);
+                    }
                     else
+                    {
                         expressionInvoke = expressionOperator.Invoke(member, valueAs);
+                    }
                 }
                 else
+                {
                     expressionInvoke = Expressions[statement.Operator].Invoke(member, valueAs);
+                }
+            }
+            else if (member.Type != typeof(string))
+            {
+                expressionInvoke = Expressions[statement.Operator].Invoke(member, constant);
             }
             else
             {
-                if (member.Type != typeof(string))
-                    expressionInvoke = Expressions[statement.Operator].Invoke(member, constant);
-                else
-                    expressionInvoke = Expressions[statement.Operator].Invoke(member, constant).AddNullCheck(member);
+                expressionInvoke = Expressions[statement.Operator].Invoke(member, constant).AddNullCheck(member);
             }
 
-            resultExpr = resultExpr != null ? Expression.AndAlso(resultExpr, expressionInvoke) : expressionInvoke;
-            return resultExpr;
-        }
-
-        private static Expression Contains(Expression member, Expression expression)
-        {
-            if (expression is ConstantExpression)
-            {
-                var constant = (ConstantExpression)expression;
-                if (constant.Value is IList && constant.Value.GetType().IsGenericType)
-                {
-                    var type = constant.Value.GetType();
-                    var containsInfo = type.GetMethod("Contains", new[] { type.GetGenericArguments()[0] });
-                    var contains = Expression.Call(constant, containsInfo, member);
-                    return contains;
-                }
-            }
-
-            return Expression.Call(member, containsMethod, expression);
+            return resultExpr != null ? Expression.AndAlso(resultExpr, expressionInvoke) : expressionInvoke;
         }
 
         private static MemberExpression GetMemberExpression(Expression param, string propertyName)
         {
             if (propertyName.Contains("."))
             {
-                int index = propertyName.IndexOf(".");
-                var subParam = Expression.Property(param, propertyName.Substring(0, index));
-                return GetMemberExpression(subParam, propertyName.Substring(index + 1));
+                var index = propertyName.IndexOf(".");
+                var subParam = Expression.Property(param, propertyName[..index]);
+                return GetMemberExpression(subParam, propertyName[(index + 1)..]);
             }
 
             return Expression.Property(param, propertyName);
@@ -184,9 +167,8 @@ namespace QueryFilter
                                             Expression.Constant(p, type));
                     return vals.ToList();
                 }
-                else
-                {
-                    return new List<ConstantExpression>()
+
+                return new List<ConstantExpression>()
                     {
                         Expression.Constant(DateTime.TryParse(value.ToString().Trim(), CultureInfo.InvariantCulture,
                             DateTimeStyles.AdjustToUniversal, out tDate)
@@ -194,24 +176,20 @@ namespace QueryFilter
                                 tDate
                             : null)
                     };
-                }
+            }
+            else if (isCollection)
+            {
+                var vals = JArray.FromObject(value).Select(p =>
+                            Expression.Constant(p.ToObject(type), type));
+                return vals.ToList();
             }
             else
             {
-                if (isCollection)
-                {
-                    var vals = JArray.FromObject(value).Select(p =>
-                                Expression.Constant(p.ToObject(type), type));
-                    return vals.ToList();
-                }
-                else
-                {
-                    var tc = TypeDescriptor.GetConverter(type);
-                    return new List<ConstantExpression>()
+                var tc = TypeDescriptor.GetConverter(type);
+                return new List<ConstantExpression>()
                 {
                     Expression.Constant(tc.ConvertFromString(value.ToString().Trim()))
                 };
-                }
             }
         }
 
@@ -229,43 +207,36 @@ namespace QueryFilter
                 {
                     exOut = Expression.Call(propertyExp, typeof(string).GetMethod("ToLower", Type.EmptyTypes));
                     exOut = Expression.Equal(exOut, Expression.Convert(someValues[0], propertyExp.Type));
-                    var counter = 1;
-                    while (counter < someValues.Count)
+                    for (var counter = 1; counter < someValues.Count; counter++)
                     {
                         exOut = Expression.Or(exOut,
                             Expression.Equal(
                                 Expression.Call(propertyExp, typeof(string).GetMethod("ToLower", Type.EmptyTypes)),
                                 Expression.Convert(someValues[counter], propertyExp.Type)));
-                        counter++;
                     }
                 }
                 else
                 {
                     exOut = Expression.Equal(propertyExp, Expression.Convert(someValues[0], propertyExp.Type));
-                    var counter = 1;
-                    while (counter < someValues.Count)
+                    for (var counter = 1; counter < someValues.Count; counter++)
                     {
                         exOut = Expression.Or(exOut,
                             Expression.Equal(propertyExp, Expression.Convert(someValues[counter], propertyExp.Type)));
-                        counter++;
                     }
                 }
             }
+            else if (type == typeof(string))
+            {
+                exOut = Expression.Call(propertyExp, ToLowerMethod);
+
+                var trimMemberCall = Expression.Call(someValues.First(), TrimMethod);
+                var rightEx = Expression.Call(trimMemberCall, ToLowerMethod);
+
+                exOut = Expression.Equal(exOut, rightEx);
+            }
             else
             {
-                if (type == typeof(string))
-                {
-                    exOut = Expression.Call(propertyExp, toLowerMethod);
-
-                    var trimMemberCall = Expression.Call(someValues.First(), trimMethod);
-                    var rightEx = Expression.Call(trimMemberCall, toLowerMethod);
-
-                    exOut = Expression.Equal(exOut, rightEx);
-                }
-                else
-                {
-                    exOut = Expression.Equal(propertyExp, Expression.Convert(someValues.First(), propertyExp.Type));
-                }
+                exOut = Expression.Equal(propertyExp, Expression.Convert(someValues[0], propertyExp.Type));
             }
             return Expression.AndAlso(nullCheck, exOut);
         }
@@ -282,15 +253,9 @@ namespace QueryFilter
                 Expression.Constant(true, typeof(bool)));
         }
 
-        private static Expression NotIn(Expression propertyExp, Expression constantExpression)
-        {
-            return Expression.Not(In(propertyExp, constantExpression));
-        }
+        private static Expression NotIn(Expression propertyExp, Expression constantExpression) => Expression.Not(In(propertyExp, constantExpression));
 
-        private static object GetDefaultValue(this Type type)
-        {
-            return type.GetTypeInfo().IsValueType ? Activator.CreateInstance(type) : null;
-        }
+        private static object GetDefaultValue(this Type type) => type.GetTypeInfo().IsValueType ? Activator.CreateInstance(type) : null;
 
         public static void CheckPropertyValueMismatch(MemberExpression member, ConstantExpression constant1)
         {
@@ -311,12 +276,12 @@ namespace QueryFilter
 
         private static Type GetConstantType(ConstantExpression constant)
         {
-            if (constant != null && constant.Value != null && constant.Value.IsGenericList())
+            if (constant != null && constant.Value?.IsGenericList() == true)
             {
                 return constant.Value.GetType().GenericTypeArguments[0];
             }
 
-            return constant != null && constant.Value != null ? constant.Value.GetType() : null;
+            return constant?.Value != null ? constant.Value.GetType() : null;
         }
     }
 }

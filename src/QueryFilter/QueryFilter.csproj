@@ -33,5 +33,10 @@
       <PackagePath></PackagePath>
     </None>
   </ItemGroup>
+  
+
+  <ItemGroup>
+    <Folder Include="ColumnAttributes\" />
+  </ItemGroup>
 
 </Project>

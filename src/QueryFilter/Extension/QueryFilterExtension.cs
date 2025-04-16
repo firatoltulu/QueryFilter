@@ -104,5 +104,10 @@ namespace QueryFilter
             var convertedResult = result.Items.Select(selector).ToList();
             return new PagedList<TResult>(convertedResult, result.TotalCount);
         }
+        public static QueryFilterModel WithJsonbColumns(this QueryFilterModel model, params string[] columns)
+        {
+            model.JsonbColumns = columns.ToList();
+            return model;
+        }
     }
 }
