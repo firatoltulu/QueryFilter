@@ -40,6 +40,13 @@ namespace QueryFilter
                 { FilterOperator.Count, (member, constant) => Expression.Call(member, CountMethod, constant) },
             };
 
+        /// <summary>
+        /// Gets an expression for filtering based on the provided filter descriptors
+        /// </summary>
+        /// <typeparam name="T">The entity type</typeparam>
+        /// <param name="filter">The list of filter descriptors</param>
+        /// <param name="connector">The logical operator to connect the filters</param>
+        /// <returns>An expression that can be used for filtering</returns>
         public static Expression<Func<T, bool>> GetExpression<T>(IList<IFilterDescriptor> filter, FilterCompositionLogicalOperator connector = FilterCompositionLogicalOperator.And) where T : class
         {
             var param = Expression.Parameter(typeof(T), "x");
@@ -52,6 +59,99 @@ namespace QueryFilter
 
             return Expression.Lambda<Func<T, bool>>(expression, param);
         }
+
+        /// <summary>
+        /// Gets an expression that combines the standard filters with any additional query conditions
+        /// </summary>
+        /// <typeparam name="T">The entity type</typeparam>
+        /// <param name="queryFilterModel">The query filter model containing filters and additional conditions</param>
+        /// <param name="connector">The logical operator to connect the filters</param>
+        /// <returns>An expression that can be used for filtering</returns>
+        public static Expression<Func<T, bool>> GetCombinedExpression<T>(QueryFilterModel queryFilterModel, FilterCompositionLogicalOperator connector = FilterCompositionLogicalOperator.And) where T : class
+        {
+            // Get the standard filter expression
+            var standardExpression = GetExpression<T>(queryFilterModel.FilterDescriptors, connector);
+            
+            // Get additional query conditions
+            var additionalExpressions = queryFilterModel.GetQueryAdditionals<T>()
+                .Select(additional => additional.GetExpression())
+                .ToList();
+
+            if (additionalExpressions.Count == 0)
+            {
+                return standardExpression;
+            }
+
+            // Combine all expressions
+            var combinedExpression = standardExpression;
+            foreach (var additionalExpression in additionalExpressions)
+            {
+                combinedExpression = CombineExpressions(combinedExpression, additionalExpression);
+            }
+
+            return combinedExpression;
+        }
+
+        /// <summary>
+        /// Applies the query filter model to an IQueryable, including any additional query conditions
+        /// </summary>
+        /// <typeparam name="T">The entity type</typeparam>
+        /// <param name="query">The source IQueryable</param>
+        /// <param name="queryFilterModel">The query filter model</param>
+        /// <returns>The filtered IQueryable</returns>
+        public static IQueryable<T> ApplyFilter<T>(this IQueryable<T> query, QueryFilterModel queryFilterModel) where T : class
+        {
+            // Apply standard filters
+            if (queryFilterModel.FilterDescriptors.Count > 0)
+            {
+                var expression = GetExpression<T>(queryFilterModel.FilterDescriptors);
+                query = query.Where(expression);
+            }
+
+            // Apply additional query conditions
+            var additionals = queryFilterModel.GetQueryAdditionals<T>();
+            foreach (var additional in additionals)
+            {
+                query = additional.Apply(query);
+            }
+
+            // Apply sorting
+            if (queryFilterModel.SortDescriptors.Count > 0)
+            {
+                query = ApplySorting(query, queryFilterModel.SortDescriptors);
+            }
+
+            // Apply paging
+            if (queryFilterModel.Skip > 0)
+            {
+                query = query.Skip(queryFilterModel.Skip);
+            }
+
+            if (queryFilterModel.Top > 0)
+            {
+                query = query.Take(queryFilterModel.Top);
+            }
+
+            return query;
+        }
+
+        /// <summary>
+        /// Applies the query filter model to an IEnumerable, including any additional query conditions
+        /// </summary>
+        /// <typeparam name="T">The entity type</typeparam>
+        /// <param name="source">The source IEnumerable</param>
+        /// <param name="queryFilterModel">The query filter model</param>
+        /// <returns>The filtered IEnumerable</returns>
+        public static IEnumerable<T> ApplyFilter<T>(this IEnumerable<T> source, QueryFilterModel queryFilterModel) where T : class
+        {
+            // Convert to IQueryable for consistent handling
+            var query = source.AsQueryable();
+            
+            // Apply the filter using the IQueryable extension
+            return ApplyFilter(query, queryFilterModel);
+        }
+
+        private static Expression CombineExpressions(Expression expr1, Expression expr2, FilterCompositionLogicalOperator connector) => connector == FilterCompositionLogicalOperator.And ? Expression.AndAlso(expr1, expr2) : Expression.OrElse(expr1, expr2);
 
         private static Expression Visit(
             ParameterExpression param,
@@ -81,8 +181,6 @@ namespace QueryFilter
 
             return CombineExpressions(expression, expr, connector);
         }
-
-        private static Expression CombineExpressions(Expression expr1, Expression expr2, FilterCompositionLogicalOperator connector) => connector == FilterCompositionLogicalOperator.And ? Expression.AndAlso(expr1, expr2) : Expression.OrElse(expr1, expr2);
 
         private static Expression GetExpression(ParameterExpression param, FilterDescriptor statement, string propertyName = null)
         {
@@ -255,6 +353,70 @@ namespace QueryFilter
 
         private static Expression NotIn(Expression propertyExp, Expression constantExpression) => Expression.Not(In(propertyExp, constantExpression));
 
+        /// <summary>
+        /// Combines two expressions with the specified logical operator
+        /// </summary>
+        private static Expression<Func<T, bool>> CombineExpressions<T>(Expression<Func<T, bool>> expr1, Expression<Func<T, bool>> expr2) where T : class
+        {
+            // Create a parameter for the combined expression
+            var parameter = Expression.Parameter(typeof(T), "x");
+            
+            // Replace the parameters in the expressions with the new parameter
+            var visitor1 = new ParameterReplacerVisitor(expr1.Parameters[0], parameter);
+            var visitor2 = new ParameterReplacerVisitor(expr2.Parameters[0], parameter);
+            
+            var body1 = visitor1.Visit(expr1.Body);
+            var body2 = visitor2.Visit(expr2.Body);
+            
+            // Combine the bodies with AND
+            var combinedBody = Expression.AndAlso(body1, body2);
+            
+            // Create a new lambda with the combined body
+            return Expression.Lambda<Func<T, bool>>(combinedBody, parameter);
+        }
+
+        /// <summary>
+        /// Applies sorting to an IQueryable based on the provided sort descriptors
+        /// </summary>
+        private static IQueryable<T> ApplySorting<T>(IQueryable<T> query, IList<SortDescriptor> sortDescriptors) where T : class
+        {
+            if (sortDescriptors.Count == 0)
+                return query;
+
+            var firstSort = sortDescriptors[0];
+            var param = Expression.Parameter(typeof(T), "x");
+            var property = GetMemberExpression(param, firstSort.Member);
+            var lambda = Expression.Lambda(property, param);
+
+            // First sort
+            var methodName = firstSort.SortDirection == System.ComponentModel.ListSortDirection.Ascending ? "OrderBy" : "OrderByDescending";
+            var orderByMethod = typeof(Queryable).GetMethods()
+                .Where(m => m.Name == methodName && m.GetParameters().Length == 2)
+                .First()
+                .MakeGenericMethod(typeof(T), property.Type);
+
+            var sortedQuery = (IOrderedQueryable<T>)orderByMethod.Invoke(null, new object[] { query, lambda });
+
+            // Additional sorts
+            for (int i = 1; i < sortDescriptors.Count; i++)
+            {
+                var sort = sortDescriptors[i];
+                param = Expression.Parameter(typeof(T), "x");
+                property = GetMemberExpression(param, sort.Member);
+                lambda = Expression.Lambda(property, param);
+
+                methodName = sort.SortDirection == System.ComponentModel.ListSortDirection.Ascending ? "ThenBy" : "ThenByDescending";
+                var thenByMethod = typeof(Queryable).GetMethods()
+                    .Where(m => m.Name == methodName && m.GetParameters().Length == 2)
+                    .First()
+                    .MakeGenericMethod(typeof(T), property.Type);
+
+                sortedQuery = (IOrderedQueryable<T>)thenByMethod.Invoke(null, new object[] { sortedQuery, lambda });
+            }
+
+            return sortedQuery;
+        }
+
         private static object GetDefaultValue(this Type type) => type.GetTypeInfo().IsValueType ? Activator.CreateInstance(type) : null;
 
         public static void CheckPropertyValueMismatch(MemberExpression member, ConstantExpression constant1)
@@ -282,6 +444,26 @@ namespace QueryFilter
             }
 
             return constant?.Value != null ? constant.Value.GetType() : null;
+        }
+    }
+
+    /// <summary>
+    /// Expression visitor that replaces parameters in expressions
+    /// </summary>
+    internal class ParameterReplacerVisitor : ExpressionVisitor
+    {
+        private readonly ParameterExpression _oldParameter;
+        private readonly ParameterExpression _newParameter;
+
+        public ParameterReplacerVisitor(ParameterExpression oldParameter, ParameterExpression newParameter)
+        {
+            _oldParameter = oldParameter;
+            _newParameter = newParameter;
+        }
+
+        protected override Expression VisitParameter(ParameterExpression node)
+        {
+            return node == _oldParameter ? _newParameter : base.VisitParameter(node);
         }
     }
 }

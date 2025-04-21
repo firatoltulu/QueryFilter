@@ -18,6 +18,7 @@ namespace QueryFilter
             SelectDescriptors = new List<SelectDescriptor>();
             FilterDescriptors = new List<IFilterDescriptor>();
             JsonbColumns = new List<string>();
+            QueryAdditionals = new List<object>();
             Current = this;
         }
 
@@ -64,6 +65,34 @@ namespace QueryFilter
         {
             get;
             set;
+        }
+
+        /// <summary>
+        /// List of additional query conditions that can be applied to different providers
+        /// </summary>
+        public List<object> QueryAdditionals { get; set; }
+
+        /// <summary>
+        /// Adds an additional query condition to the QueryFilterModel
+        /// </summary>
+        /// <typeparam name="T">The entity type</typeparam>
+        /// <param name="additional">The additional query condition</param>
+        public void AddQueryAdditional<T>(IQueryAdditional<T> additional) where T : class
+        {
+            QueryAdditionals.Add(additional);
+        }
+
+        /// <summary>
+        /// Gets all additional query conditions for a specific entity type
+        /// </summary>
+        /// <typeparam name="T">The entity type</typeparam>
+        /// <returns>List of IQueryAdditional for the specified type</returns>
+        public List<IQueryAdditional<T>> GetQueryAdditionals<T>() where T : class
+        {
+            return QueryAdditionals
+                .Where(a => a is IQueryAdditional<T>)
+                .Cast<IQueryAdditional<T>>()
+                .ToList();
         }
 
         public static QueryFilterModel Parse(string queryFilter)

@@ -199,48 +199,119 @@ namespace QueryFilter.Formatter
         {
             if (filter != null)
             {
-                // Check if this is a JSON column
-                bool isJsonColumn = QueryFilterModel.Current?.JsonbColumns?.Contains(filter.Member) == true;
+                // Check if this is a JSON column or a nested JSON path
+                bool isJsonColumn = false;
+                string jsonColumn = null;
+                string jsonPath = null;
+
+                // Check if the member is a direct JSON column or a nested path
+                if (filter.Member.Contains("."))
+                {
+                    // Handle nested JSON path (e.g., "UserFields.X")
+                    var parts = filter.Member.Split(new[] { '.' }, 2);
+                    if (QueryFilterModel.Current?.JsonbColumns?.Contains(parts[0]) == true)
+                    {
+                        isJsonColumn = true;
+                        jsonColumn = parts[0];
+                        jsonPath = parts[1];
+                    }
+                }
+                else if (QueryFilterModel.Current?.JsonbColumns?.Contains(filter.Member) == true)
+                {
+                    // Direct JSON column
+                    isJsonColumn = true;
+                    jsonColumn = filter.Member;
+                }
 
                 if (isJsonColumn)
                 {
                     // Handle JSON column filtering
                     Write(" ");
-                    Write(filter.Member);
-                    Write(" ");
                     
-                    switch (filter.Operator)
+                    if (jsonPath != null)
                     {
-                        case FilterOperator.IsEqualTo:
-                            Write("::jsonb @> ");
-                            WriteJsonValue(filter.Value);
-                            break;
-                        case FilterOperator.IsNotEqualTo:
-                            Write("::jsonb @> ");
-                            WriteJsonValue(filter.Value);
-                            Write(" IS NOT TRUE");
-                            break;
-                        case FilterOperator.Contains:
-                            Write("::text LIKE ");
-                            Write("'%");
-                            Write(filter.Value);
-                            Write("%'");
-                            break;
-                        case FilterOperator.IsContainedIn:
-                            Write("::jsonb <@ ");
-                            WriteJsonValue(filter.Value);
-                            break;
-                        case FilterOperator.NotIsContainedIn:
-                            Write("::jsonb <@ ");
-                            WriteJsonValue(filter.Value);
-                            Write(" IS NOT TRUE");
-                            break;
-                        default:
-                            // For other operators, fall back to text comparison
-                            Write("::text ");
-                            Write(GetOperator(filter.Operator));
-                            WriteValue(filter.Value);
-                            break;
+                        // For nested JSON path
+                        switch (filter.Operator)
+                        {
+                            case FilterOperator.IsEqualTo:
+                                Write("\"");
+                                Write(jsonColumn);
+                                Write("\"->>'");
+                                Write(jsonPath);
+                                Write("' = ");
+                                WriteValue(filter.Value);
+                                break;
+                            case FilterOperator.IsNotEqualTo:
+                                Write("\"");
+                                Write(jsonColumn);
+                                Write("\"->>'");
+                                Write(jsonPath);
+                                Write("' != ");
+                                WriteValue(filter.Value);
+                                break;
+                            case FilterOperator.Contains:
+                                Write("\"");
+                                Write(jsonColumn);
+                                Write("\"->>'");
+                                Write(jsonPath);
+                                Write("' LIKE ");
+                                Write("'%");
+                                Write(filter.Value);
+                                Write("%'");
+                                break;
+                            default:
+                                // For other operators, use the standard text comparison
+                                Write("\"");
+                                Write(jsonColumn);
+                                Write("\"->>'");
+                                Write(jsonPath);
+                                Write("' ");
+                                Write(GetOperator(filter.Operator));
+                                WriteValue(filter.Value);
+                                break;
+                        }
+                    }
+                    else
+                    {
+                        // For direct JSON column
+                        Write("\"");
+                        Write(jsonColumn);
+                        Write("\"");
+                        Write(" ");
+                        
+                        switch (filter.Operator)
+                        {
+                            case FilterOperator.IsEqualTo:
+                                Write("::jsonb @> ");
+                                WriteJsonValue(filter.Value);
+                                break;
+                            case FilterOperator.IsNotEqualTo:
+                                Write("::jsonb @> ");
+                                WriteJsonValue(filter.Value);
+                                Write(" IS NOT TRUE");
+                                break;
+                            case FilterOperator.Contains:
+                                Write("::text LIKE ");
+                                Write("'%");
+                                Write(filter.Value);
+                                Write("%'");
+                                break;
+                            case FilterOperator.IsContainedIn:
+                                Write("::jsonb <@ ");
+                                WriteJsonValue(filter.Value);
+                                break;
+                            case FilterOperator.NotIsContainedIn:
+                                Write("::jsonb <@ ");
+                                WriteJsonValue(filter.Value);
+                                Write(" IS NOT TRUE");
+                                break;
+                            default:
+                                // For other operators, fall back to text comparison
+                                Write("::text ");
+                                Write(GetOperator(filter.Operator));
+                                WriteValue(filter.Value);
+                                break;
+                        }
                     }
                 }
                 else
@@ -254,7 +325,9 @@ namespace QueryFilter.Formatter
                     {
                         if (filter.Operator == FilterOperator.IsEqualTo)
                         {
-                            Write("IS NULL");
+                            Write("IS NULL OR ");
+                            Write(filter.Member);
+
                         }
                         else if (filter.Operator == FilterOperator.IsNotEqualTo)
                         {
