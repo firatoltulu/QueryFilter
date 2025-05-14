@@ -4,8 +4,8 @@
     <TargetFramework>netstandard2.1</TargetFramework>
     <Authors>Fırat Oltulu</Authors>
     <Company>SmartCreative</Company>
-    <AssemblyVersion>1.0.23</AssemblyVersion>
-    <Version>1.0.23</Version>
+    <AssemblyVersion>1.0.24</AssemblyVersion>
+    <Version>1.0.24</Version>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <PackageId>SmartCreative.QueryFilter</PackageId>
     <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
