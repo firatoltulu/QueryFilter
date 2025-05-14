@@ -227,7 +227,7 @@ namespace QueryFilter.Formatter
                 {
                     // Handle JSON column filtering
                     Write(" ");
-                    
+
                     if (jsonPath != null)
                     {
                         // For nested JSON path
@@ -278,7 +278,7 @@ namespace QueryFilter.Formatter
                         Write(jsonColumn);
                         Write("\"");
                         Write(" ");
-                        
+
                         switch (filter.Operator)
                         {
                             case FilterOperator.IsEqualTo:
@@ -336,8 +336,20 @@ namespace QueryFilter.Formatter
                     }
                     else
                     {
-                        Write(GetOperator(filter.Operator));
-                        WriteValue(filter.Value);
+                        if (filter.Operator == FilterOperator.Contains ||
+                          filter.Operator == FilterOperator.StartsWith ||
+                          filter.Operator == FilterOperator.NotStartsWith ||
+                          filter.Operator == FilterOperator.EndsWith ||
+                          filter.Operator == FilterOperator.NotEndsWith)
+                        {
+                            string operatorFormat = GetOperator(filter.Operator);
+                            Write(string.Format(operatorFormat, filter.Value));
+                        }
+                        else
+                        {
+                            Write(GetOperator(filter.Operator));
+                            WriteValue(filter.Value);
+                        }
                     }
                 }
             }
@@ -494,12 +506,12 @@ namespace QueryFilter.Formatter
                         {
                             var arrayLists = JArray.FromObject(value);
                             Write("'[");
-                            
+
                             for (int i = 0; i < arrayLists.Count; i++)
                             {
                                 var _row = (arrayLists[i] as JValue);
                                 var rowValue = _row.Value.Convert(_row.Value.GetType());
-                                
+
                                 if (rowValue is string)
                                 {
                                     Write("\"");
@@ -516,7 +528,7 @@ namespace QueryFilter.Formatter
                                     Write(",");
                                 }
                             }
-                            
+
                             Write("]'::jsonb");
                         }
                         else if (value is Guid)
