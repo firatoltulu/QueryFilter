@@ -153,5 +153,12 @@ namespace QueryFilter.Test
 
             Assert.AreEqual(result.Trim(), "SELECT  *  FROM \"\"   WHERE  \"Name\" IS NULL OR Name = ''  OFFSET 0 ROWS  FETCH NEXT 10 ROWS ONLY".Trim());
         }
+        [TestCase]
+        public void StringMember_Filtered_Contains_Success()
+        {
+            var queryFilterModel = QueryFilterModel.Parse("$filter=CheckoutAttributeDescription~contains~'123456789'");
+            var result = new PostgreSqlFormatter().Format(queryFilterModel);
+            Assert.AreEqual(result.Trim(), "SELECT  *  FROM \"\"   WHERE  \"CheckoutAttributeDescription\" LIKE '%123456789%' OFFSET 0 ROWS  FETCH NEXT 10 ROWS ONLY ".Trim());
+        }
     }
 }
