@@ -325,32 +325,37 @@ namespace QueryFilter.Formatter
                     {
                         if (filter.Operator == FilterOperator.IsEqualTo)
                         {
-                            Write("IS NULL OR ");
-                            Write(filter.Member);
-                            Write(" = '' ");
-
+                            Write("IS NULL ");
                         }
                         else if (filter.Operator == FilterOperator.IsNotEqualTo)
                         {
                             Write("IS NOT NULL");
                         }
                     }
-                    else
+                    else if (string.IsNullOrEmpty(filter.Value.ToString()))
                     {
-                        if (filter.Operator == FilterOperator.Contains ||
+                        if (filter.Operator == FilterOperator.IsEqualTo)
+                        {
+                            Write(" = ''");
+                        }
+                        else if (filter.Operator == FilterOperator.IsNotEqualTo)
+                        {
+                            Write("!= ''");
+                        }
+                    }
+                    else if (filter.Operator == FilterOperator.Contains ||
                           filter.Operator == FilterOperator.StartsWith ||
                           filter.Operator == FilterOperator.NotStartsWith ||
                           filter.Operator == FilterOperator.EndsWith ||
                           filter.Operator == FilterOperator.NotEndsWith)
-                        {
-                            string operatorFormat = GetOperator(filter.Operator);
-                            Write(string.Format(operatorFormat, filter.Value));
-                        }
-                        else
-                        {
-                            Write(GetOperator(filter.Operator));
-                            WriteValue(filter.Value);
-                        }
+                    {
+                        var operatorFormat = GetOperator(filter.Operator);
+                        Write(string.Format(operatorFormat, filter.Value));
+                    }
+                    else
+                    {
+                        Write(GetOperator(filter.Operator));
+                        WriteValue(filter.Value);
                     }
                 }
             }

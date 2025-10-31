@@ -81,7 +81,7 @@ namespace QueryFilter.Test
         [TestCaseSource("_studentLists")]
         public void NumberMember_Filtered_Null_Success(IEnumerable<StudentModel> studentModels)
         {
-            var queryFilterModel = QueryFilterModel.Parse("$filter=NullValue~eq~''");
+            var queryFilterModel = QueryFilterModel.Parse("$filter=NullValue~eq~null");
             var result = studentModels.QueryFilter(queryFilterModel);
             Assert.AreEqual(result.TotalCount, 1);
         }

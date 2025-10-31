@@ -44,14 +44,13 @@ namespace QueryFilter
                 }
                 else if (TryParseString(out result))
                 {
-                    if (!string.IsNullOrEmpty(result))
-                    {
-                        tokens.Add(String(result));
-                    }
-                    else
-                    {
-                        tokens.Add(NullValue(result));
-                    }
+
+                    tokens.Add(String(result));
+                    //}
+                    //else
+                    //{
+                    //    tokens.Add(NullValue(result));
+                    //}
                 }
                 else if (TryParseCharacter(out result, '('))
                 {
