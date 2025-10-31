@@ -327,6 +327,7 @@ namespace QueryFilter.Formatter
                         {
                             Write("IS NULL OR ");
                             Write(filter.Member);
+                            Write(" = '' ");
 
                         }
                         else if (filter.Operator == FilterOperator.IsNotEqualTo)
