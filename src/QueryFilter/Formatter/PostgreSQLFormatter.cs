@@ -279,15 +279,35 @@ namespace QueryFilter.Formatter
                         Write("\"");
                         Write(" ");
 
+                        // Check if this is an array column
+                        bool isArrayColumn = QueryFilterModel.Current?.JsonbArrayColumns?.Contains(jsonColumn) == true;
+
                         switch (filter.Operator)
                         {
                             case FilterOperator.IsEqualTo:
-                                Write("::jsonb @> ");
-                                WriteJsonValue(filter.Value);
+                                if (isArrayColumn)
+                                {
+                                    // For array columns, wrap the value in an array
+                                    Write("::jsonb @> ");
+                                    WriteJsonArrayValue(filter.Value);
+                                }
+                                else
+                                {
+                                    Write("::jsonb @> ");
+                                    WriteJsonValue(filter.Value);
+                                }
                                 break;
                             case FilterOperator.IsNotEqualTo:
-                                Write("::jsonb @> ");
-                                WriteJsonValue(filter.Value);
+                                if (isArrayColumn)
+                                {
+                                    Write("::jsonb @> ");
+                                    WriteJsonArrayValue(filter.Value);
+                                }
+                                else
+                                {
+                                    Write("::jsonb @> ");
+                                    WriteJsonValue(filter.Value);
+                                }
                                 Write(" IS NOT TRUE");
                                 break;
                             case FilterOperator.Contains:
@@ -297,12 +317,30 @@ namespace QueryFilter.Formatter
                                 Write("%'");
                                 break;
                             case FilterOperator.IsContainedIn:
-                                Write("::jsonb <@ ");
-                                WriteJsonValue(filter.Value);
+                                if (isArrayColumn && filter.Value.IsGenericList())
+                                {
+                                    // For array columns with list values, use the ?| operator (any of)
+                                    Write("::jsonb ?| array");
+                                    WriteJsonArray(filter.Value);
+                                }
+                                else
+                                {
+                                    Write("::jsonb <@ ");
+                                    WriteJsonValue(filter.Value);
+                                }
                                 break;
                             case FilterOperator.NotIsContainedIn:
-                                Write("::jsonb <@ ");
-                                WriteJsonValue(filter.Value);
+                                if (isArrayColumn && filter.Value.IsGenericList())
+                                {
+                                    // For array columns with list values, use the ?& operator (all of)
+                                    Write("::jsonb ?& array");
+                                    WriteJsonArray(filter.Value);
+                                }
+                                else
+                                {
+                                    Write("::jsonb <@ ");
+                                    WriteJsonValue(filter.Value);
+                                }
                                 Write(" IS NOT TRUE");
                                 break;
                             default:
@@ -575,6 +613,135 @@ namespace QueryFilter.Formatter
                         Write("'::jsonb");
                         break;
                 }
+            }
+        }
+
+        protected virtual void WriteJsonArrayValue(object value)
+        {
+            // Similar to WriteJsonValue but wraps the value in an array
+            if (value == null)
+            {
+                Write("'");
+                Write("[null]");
+                Write("'::jsonb");
+            }
+            else if (value.GetType().IsEnum)
+            {
+                Write("'");
+                Write("[");
+                Write(Convert.ChangeType(value, Enum.GetUnderlyingType(value.GetType())));
+                Write("]");
+                Write("'::jsonb");
+            }
+            else
+            {
+                switch (Type.GetTypeCode(value.GetType()))
+                {
+                    case TypeCode.Boolean:
+                        Write("'");
+                        Write("[");
+                        Write(((bool)value) ? "true" : "false");
+                        Write("]");
+                        Write("'::jsonb");
+                        break;
+                    case TypeCode.String:
+                        Write("'");
+                        Write("[\"");
+                        Write(value);
+                        Write("\"]");
+                        Write("'::jsonb");
+                        break;
+                    case TypeCode.Object:
+                        if (value.IsGenericList() || value.GetType().IsArray)
+                        {
+                            // If the value is already an array, just serialize it directly
+                            var arrayLists = JArray.FromObject(value);
+                            Write("'");
+                            Write(Newtonsoft.Json.JsonConvert.SerializeObject(value));
+                            Write("'::jsonb");
+                        }
+                        else if (value is Guid)
+                        {
+                            Write("'");
+                            Write("[\"");
+                            Write(value.ToString());
+                            Write("\"]");
+                            Write("'::jsonb");
+                        }
+                        else
+                        {
+                            // Wrap complex object in array
+                            Write("'");
+                            Write("[");
+                            Write(Newtonsoft.Json.JsonConvert.SerializeObject(value));
+                            Write("]");
+                            Write("'::jsonb");
+                        }
+                        break;
+                    case TypeCode.Single:
+                    case TypeCode.Double:
+                    case TypeCode.Int16:
+                    case TypeCode.Int32:
+                    case TypeCode.Int64:
+                    case TypeCode.UInt16:
+                    case TypeCode.UInt32:
+                    case TypeCode.UInt64:
+                    case TypeCode.Decimal:
+                        Write("'");
+                        Write("[");
+                        Write(value);
+                        Write("]");
+                        Write("'::jsonb");
+                        break;
+                    case TypeCode.DateTime:
+                        Write("'");
+                        Write("[\"");
+                        Write(Convert.ToDateTime(value).ToString("yyyy-MM-dd HH:mm:ss.fff"));
+                        Write("\"]");
+                        Write("'::jsonb");
+                        break;
+                    default:
+                        Write("'");
+                        Write("[");
+                        Write(value);
+                        Write("]");
+                        Write("'::jsonb");
+                        break;
+                }
+            }
+        }
+
+        protected virtual void WriteJsonArray(object value)
+        {
+            // Write array for ?| and ?& operators
+            if (value.IsGenericList() || value.GetType().IsArray)
+            {
+                var arrayLists = JArray.FromObject(value);
+                Write("[");
+
+                for (int i = 0; i < arrayLists.Count; i++)
+                {
+                    var _row = (arrayLists[i] as JValue);
+                    var rowValue = _row.Value.Convert(_row.Value.GetType());
+
+                    if (rowValue is string)
+                    {
+                        Write("'");
+                        Write(rowValue);
+                        Write("'");
+                    }
+                    else
+                    {
+                        Write(rowValue);
+                    }
+
+                    if (i < (arrayLists.Count - 1))
+                    {
+                        Write(",");
+                    }
+                }
+
+                Write("]");
             }
         }
 

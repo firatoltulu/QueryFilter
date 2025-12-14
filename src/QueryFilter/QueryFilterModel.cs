@@ -206,6 +206,7 @@ namespace QueryFilter
             clone.SortDescriptors = SortDescriptors.Select(s => new SortDescriptor() { Member = s.Member, SortDirection = s.SortDirection }).ToList();
             clone.GroupDescriptors = GroupDescriptors.Select(g => new GroupDescriptor(g.Member)).ToList();
             clone.JsonbColumns = new List<string>(JsonbColumns);
+            clone.JsonbArrayColumns = new List<string>(JsonbArrayColumns);
 
             clone.FilterDescriptors = new List<IFilterDescriptor>();
             foreach (var filter in FilterDescriptors)
@@ -233,6 +234,11 @@ namespace QueryFilter
             return clone;
         }
         public List<string> JsonbColumns { get; set; } = new List<string>();
+        
+        /// <summary>
+        /// List of JSONB columns that contain arrays instead of objects
+        /// </summary>
+        public List<string> JsonbArrayColumns { get; set; } = new List<string>();
 
     }
 }
