@@ -230,45 +230,99 @@ namespace QueryFilter.Formatter
 
                     if (jsonPath != null)
                     {
-                        // For nested JSON path
-                        switch (filter.Operator)
+                        // Check if this is an array column
+                        bool isArrayColumn = QueryFilterModel.Current?.JsonbArrayColumns?.Contains(jsonColumn) == true;
+                        
+                        if (isArrayColumn)
                         {
-                            case FilterOperator.IsEqualTo:
-                                Write("\"");
-                                Write(jsonColumn);
-                                Write("\"->>'");
-                                Write(jsonPath);
-                                Write("' = ");
-                                WriteValue(filter.Value);
-                                break;
-                            case FilterOperator.IsNotEqualTo:
-                                Write("\"");
-                                Write(jsonColumn);
-                                Write("\"->>'");
-                                Write(jsonPath);
-                                Write("' != ");
-                                WriteValue(filter.Value);
-                                break;
-                            case FilterOperator.Contains:
-                                Write("\"");
-                                Write(jsonColumn);
-                                Write("\"->>'");
-                                Write(jsonPath);
-                                Write("' LIKE ");
-                                Write("'%");
-                                Write(filter.Value);
-                                Write("%'");
-                                break;
-                            default:
-                                // For other operators, use the standard text comparison
-                                Write("\"");
-                                Write(jsonColumn);
-                                Write("\"->>'");
-                                Write(jsonPath);
-                                Write("' ");
-                                Write(GetOperator(filter.Operator));
-                                WriteValue(filter.Value);
-                                break;
+                            // For array columns with nested paths, search for objects in array
+                            switch (filter.Operator)
+                            {
+                                case FilterOperator.IsEqualTo:
+                                    Write("\"");
+                                    Write(jsonColumn);
+                                    Write("\"::jsonb @> '[{");
+                                    Write("\"");
+                                    Write(jsonPath);
+                                    Write("\":");
+                                    WriteJsonValueForArray(filter.Value);
+                                    Write("}]'::jsonb");
+                                    break;
+                                case FilterOperator.IsNotEqualTo:
+                                    Write("\"");
+                                    Write(jsonColumn);
+                                    Write("\"::jsonb @> '[{");
+                                    Write("\"");
+                                    Write(jsonPath);
+                                    Write("\":");
+                                    WriteJsonValueForArray(filter.Value);
+                                    Write("}]'::jsonb IS NOT TRUE");
+                                    break;
+                                case FilterOperator.Contains:
+                                    Write("\"");
+                                    Write(jsonColumn);
+                                    Write("\"::jsonb @@ '$[*] ? (@.");
+                                    Write(jsonPath);
+                                    Write(" like_regex \".*");
+                                    Write(filter.Value.ToString().Replace("'", "''").Replace("\\", "\\\\"));
+                                    Write(".*\")'");
+                                    break;
+                                default:
+                                    // For other operators, use jsonpath
+                                    Write("\"");
+                                    Write(jsonColumn);
+                                    Write("\"::jsonb @@ '$[*] ? (@.");
+                                    Write(jsonPath);
+                                    Write(" ");
+                                    Write(GetJsonPathOperator(filter.Operator));
+                                    Write(" ");
+                                    WriteValue(filter.Value);
+                                    Write(")'");
+                                    break;
+                            }
+                        }
+                        else
+                        {
+                            // For nested JSON path in object columns
+                            switch (filter.Operator)
+                            {
+                                case FilterOperator.IsEqualTo:
+                                    Write("\"");
+                                    Write(jsonColumn);
+                                    Write("\"->>'");
+                                    Write(jsonPath);
+                                    Write("' = ");
+                                    WriteValue(filter.Value);
+                                    break;
+                                case FilterOperator.IsNotEqualTo:
+                                    Write("\"");
+                                    Write(jsonColumn);
+                                    Write("\"->>'");
+                                    Write(jsonPath);
+                                    Write("' != ");
+                                    WriteValue(filter.Value);
+                                    break;
+                                case FilterOperator.Contains:
+                                    Write("\"");
+                                    Write(jsonColumn);
+                                    Write("\"->>'");
+                                    Write(jsonPath);
+                                    Write("' LIKE ");
+                                    Write("'%");
+                                    Write(filter.Value);
+                                    Write("%'");
+                                    break;
+                                default:
+                                    // For other operators, use the standard text comparison
+                                    Write("\"");
+                                    Write(jsonColumn);
+                                    Write("\"->>'");
+                                    Write(jsonPath);
+                                    Write("' ");
+                                    Write(GetOperator(filter.Operator));
+                                    WriteValue(filter.Value);
+                                    break;
+                            }
                         }
                     }
                     else
@@ -445,6 +499,33 @@ namespace QueryFilter.Formatter
             return "";
         }
 
+        private string GetJsonPathOperator(FilterOperator b)
+        {
+            switch (b)
+            {
+                case FilterOperator.IsLessThan:
+                    return "<";
+
+                case FilterOperator.IsLessThanOrEqualTo:
+                    return "<=";
+
+                case FilterOperator.IsEqualTo:
+                    return "==";
+
+                case FilterOperator.IsNotEqualTo:
+                    return "!=";
+
+                case FilterOperator.IsGreaterThanOrEqualTo:
+                    return ">=";
+
+                case FilterOperator.IsGreaterThan:
+                    return ">";
+
+                default:
+                    return "==";
+            }
+        }
+
         protected virtual void WriteValue(object value)
         {
             if (value == null)
@@ -512,6 +593,71 @@ namespace QueryFilter.Formatter
                         Write("'");
                         break;
 
+                    default:
+                        Write(value);
+                        break;
+                }
+            }
+        }
+
+        protected virtual void WriteJsonValueForArray(object value)
+        {
+            // Similar to WriteJsonValue but without the ::jsonb suffix
+            // Used when writing values inside JSON objects
+            if (value == null)
+            {
+                Write("null");
+            }
+            else if (value.GetType().IsEnum)
+            {
+                Write(Convert.ChangeType(value, Enum.GetUnderlyingType(value.GetType())));
+            }
+            else
+            {
+                switch (Type.GetTypeCode(value.GetType()))
+                {
+                    case TypeCode.Boolean:
+                        Write(((bool)value) ? "true" : "false");
+                        break;
+                    case TypeCode.String:
+                        Write("\"");
+                        Write(value);
+                        Write("\"");
+                        break;
+                    case TypeCode.Object:
+                        if (value.IsGenericList() || value.GetType().IsArray)
+                        {
+                            // If the value is already an array, just serialize it directly
+                            Write(Newtonsoft.Json.JsonConvert.SerializeObject(value));
+                        }
+                        else if (value is Guid)
+                        {
+                            Write("\"");
+                            Write(value.ToString());
+                            Write("\"");
+                        }
+                        else
+                        {
+                            // Serialize complex object to JSON
+                            Write(Newtonsoft.Json.JsonConvert.SerializeObject(value));
+                        }
+                        break;
+                    case TypeCode.Single:
+                    case TypeCode.Double:
+                    case TypeCode.Int16:
+                    case TypeCode.Int32:
+                    case TypeCode.Int64:
+                    case TypeCode.UInt16:
+                    case TypeCode.UInt32:
+                    case TypeCode.UInt64:
+                    case TypeCode.Decimal:
+                        Write(value);
+                        break;
+                    case TypeCode.DateTime:
+                        Write("\"");
+                        Write(Convert.ToDateTime(value).ToString("yyyy-MM-dd HH:mm:ss.fff"));
+                        Write("\"");
+                        break;
                     default:
                         Write(value);
                         break;
