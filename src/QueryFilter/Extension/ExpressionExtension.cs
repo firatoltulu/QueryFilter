@@ -7,35 +7,50 @@ namespace QueryFilter
     public static class ExpressionExtension
     {
         private static readonly MethodInfo TrimMethod = typeof(string).GetMethod("Trim", new Type[0]);
-        private static readonly MethodInfo ToLowerMethod = typeof(string).GetMethod("ToLower", new Type[0]);
+        private static readonly MethodInfo ToLowerInvariantMethod = typeof(string).GetMethod("ToLowerInvariant", new Type[0]);
 
+        /// <summary>
+        /// Applies Trim().ToLowerInvariant() to a member expression (database column).
+        /// ORM providers (EF Core 5+ / Npgsql) translate ToLowerInvariant() to SQL LOWER().
+        /// Using InvariantCulture avoids Turkish-I and similar locale-specific issues.
+        /// </summary>
         public static Expression TrimToLower(this MemberExpression member)
         {
             var trimMemberCall = Expression.Call(member, TrimMethod);
-            return Expression.Call(trimMemberCall, ToLowerMethod);
+            return Expression.Call(trimMemberCall, ToLowerInvariantMethod);
         }
 
         /// <summary>
-        /// Applies the string Trim and ToLower methods to an ExpressionMember.
+        /// Applies Trim and ToLowerInvariant to a constant expression value.
+        /// Uses InvariantCulture to avoid Turkish-I and similar locale issues
+        /// where C# ToLower() produces different results than database Lower().
         /// </summary>
-        /// <param name="constant">Constant to which to methods will be applied.</param>
-        /// <returns></returns>
         public static Expression TrimToLower(this ConstantExpression constant)
         {
             if (constant.Value == null)
                 return constant;
 
-            var trimMemberCall = Expression.Call(constant, TrimMethod);
-            return Expression.Call(trimMemberCall, ToLowerMethod);
+            var value = constant.Value.ToString().Trim().ToLowerInvariant();
+            return Expression.Constant(value);
         }
 
+        /// <summary>
+        /// Applies Trim and ToLowerInvariant to a unary (Convert) expression value.
+        /// Uses InvariantCulture to avoid Turkish-I and similar locale issues
+        /// where C# ToLower() produces different results than database Lower().
+        /// </summary>
         public static Expression TrimToLower(this UnaryExpression constant)
         {
             if (constant == null)
                 return constant;
 
+            if (constant.Operand is ConstantExpression innerConstant && innerConstant.Value is string strValue)
+            {
+                return Expression.Constant(strValue.Trim().ToLowerInvariant());
+            }
+
             var trimMemberCall = Expression.Call(constant, TrimMethod);
-            return Expression.Call(trimMemberCall, ToLowerMethod);
+            return Expression.Call(trimMemberCall, ToLowerInvariantMethod);
         }
 
         /// <summary>
