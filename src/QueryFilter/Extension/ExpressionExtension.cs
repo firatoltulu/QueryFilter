@@ -7,17 +7,17 @@ namespace QueryFilter
     public static class ExpressionExtension
     {
         private static readonly MethodInfo TrimMethod = typeof(string).GetMethod("Trim", new Type[0]);
-        private static readonly MethodInfo ToLowerInvariantMethod = typeof(string).GetMethod("ToLowerInvariant", new Type[0]);
+        private static readonly MethodInfo ToLowerMethod = typeof(string).GetMethod("ToLower", new Type[0]);
 
         /// <summary>
-        /// Applies Trim().ToLowerInvariant() to a member expression (database column).
-        /// ORM providers (EF Core 5+ / Npgsql) translate ToLowerInvariant() to SQL LOWER().
-        /// Using InvariantCulture avoids Turkish-I and similar locale-specific issues.
+        /// Applies Trim().ToLower() to a member expression (database column).
+        /// ORM providers translate ToLower() to SQL LOWER().
+        /// Must use ToLower (not ToLowerInvariant) for ORM SQL translation compatibility.
         /// </summary>
         public static Expression TrimToLower(this MemberExpression member)
         {
             var trimMemberCall = Expression.Call(member, TrimMethod);
-            return Expression.Call(trimMemberCall, ToLowerInvariantMethod);
+            return Expression.Call(trimMemberCall, ToLowerMethod);
         }
 
         /// <summary>
@@ -50,7 +50,7 @@ namespace QueryFilter
             }
 
             var trimMemberCall = Expression.Call(constant, TrimMethod);
-            return Expression.Call(trimMemberCall, ToLowerInvariantMethod);
+            return Expression.Call(trimMemberCall, ToLowerMethod);
         }
 
         /// <summary>

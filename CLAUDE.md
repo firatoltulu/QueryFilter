@@ -40,7 +40,9 @@ Example: `$filter=Name~eq~'Nancy'~and~Age~gt~30&$top=10&$orderby=Name-asc`
 
 ### String Comparison Strategy
 
-All string comparisons use `ToLowerInvariant()` to avoid locale-specific issues (Turkish-I problem). The member (DB column) side uses `ToLowerInvariant()` in the expression tree which ORM providers translate to SQL `LOWER()`. The constant (parameter) side is evaluated directly in C# using `ToLowerInvariant()`.
+String comparisons use a split strategy to avoid locale issues (Turkish-I problem):
+- **Member side (DB column)**: Uses `ToLower()` in the expression tree — ORM providers translate this to SQL `LOWER()`. `ToLowerInvariant()` is NOT supported by most ORM providers for SQL translation.
+- **Constant side (parameter)**: Evaluated directly in C# using `ToLowerInvariant()` to match DB `LOWER()` output regardless of thread culture.
 
 ## Code Conventions
 
@@ -52,8 +54,8 @@ All string comparisons use `ToLowerInvariant()` to avoid locale-specific issues 
 
 ## Important Patterns
 
-- `ExpressionExtension.TrimToLower()` has 3 overloads: `MemberExpression` (DB side), `ConstantExpression` (C# side), `UnaryExpression` (C# side). The DB side builds an expression tree node; the C# side evaluates the value directly.
-- `ExpressionMethodHelper.In()` handles string containment separately with its own `ToLowerInvariant` logic for both single and multi-value scenarios.
+- `ExpressionExtension.TrimToLower()` has 3 overloads: `MemberExpression` (DB side, uses `ToLower` for ORM compatibility), `ConstantExpression` (C# side, uses `ToLowerInvariant`), `UnaryExpression` (C# side, uses `ToLowerInvariant`).
+- `ExpressionMethodHelper.In()` handles string containment separately — member side uses `ToLower` (ORM), constant side uses direct `ToLowerInvariant` evaluation.
 - Null checks are prepended via `AddNullCheck()` for string comparisons.
 
 ## Dependencies

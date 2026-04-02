@@ -15,7 +15,7 @@ namespace QueryFilter
     {
         private static readonly MethodInfo ContainsMethod = typeof(string).GetMethod("Contains", new[] { typeof(string) });
         private static readonly MethodInfo TrimMethod = typeof(string).GetMethod("Trim", new Type[0]);
-        private static readonly MethodInfo ToLowerMethod = typeof(string).GetMethod("ToLowerInvariant", new Type[0]);
+        private static readonly MethodInfo ToLowerMethod = typeof(string).GetMethod("ToLower", new Type[0]);
         private static readonly MethodInfo StartsWithMethod = typeof(string).GetMethod("StartsWith", new[] { typeof(string) });
         private static readonly MethodInfo EndsWithMethod = typeof(string).GetMethod("EndsWith", new[] { typeof(string) });
         private static readonly MethodInfo CountMethod = typeof(Enumerable).GetMethods().First(method => method.Name == "Count" && method.GetParameters().Length == 1);
@@ -303,13 +303,13 @@ namespace QueryFilter
             {
                 if (type == typeof(string))
                 {
-                    exOut = Expression.Call(propertyExp, typeof(string).GetMethod("ToLowerInvariant", Type.EmptyTypes));
+                    exOut = Expression.Call(propertyExp, typeof(string).GetMethod("ToLower", Type.EmptyTypes));
                     exOut = Expression.Equal(exOut, Expression.Convert(someValues[0], propertyExp.Type));
                     for (var counter = 1; counter < someValues.Count; counter++)
                     {
                         exOut = Expression.Or(exOut,
                             Expression.Equal(
-                                Expression.Call(propertyExp, typeof(string).GetMethod("ToLowerInvariant", Type.EmptyTypes)),
+                                Expression.Call(propertyExp, typeof(string).GetMethod("ToLower", Type.EmptyTypes)),
                                 Expression.Convert(someValues[counter], propertyExp.Type)));
                     }
                 }
