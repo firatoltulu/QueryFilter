@@ -148,6 +148,24 @@ var expression = ExpressionMethodHelper.GetExpression<Product>(qf.FilterDescript
 var result = dbContext.Products.Where(expression).ToList();
 ```
 
+### Async Sayfalama (linq2db / EF Core)
+
+`QueryFilterAsync`, `QueryFilter` ile aynı filtre, sıralama, `Skip` ve `Take`'i uygular; toplam sayıyı ve sayfayı sizin verdiğiniz async fonksiyonlarla çalıştırır. Kütüphane linq2db ya da EF Core'a bağımlı değildir; ORM'in `CountAsync` / `ToListAsync` metotlarını siz geçirirsiniz. `CancellationToken` iki fonksiyona da aynen iletilir.
+
+```csharp
+// linq2db
+var page = await table.QueryFilterAsync(model,
+    (q, ct) => LinqToDB.AsyncExtensions.CountAsync(q, ct),
+    (q, ct) => LinqToDB.AsyncExtensions.ToListAsync(q, ct), ct);
+
+// EF Core
+var page = await dbContext.Products.QueryFilterAsync("$filter=Price~gt~100&$top=20",
+    (q, ct) => q.CountAsync(ct),
+    (q, ct) => q.ToListAsync(ct), ct);
+```
+
+> Not: `$groupby` içeren sorgular bu sürümde async çalışmaz; senkron yol çalışır ve sonuç `Task.FromResult` ile döner (verilen fonksiyonlar çağrılmaz).
+
 ### QueryAdditional ile Ozel Kosullar
 
 `IQueryAdditional<T>` arayuzu ile standart filtrelerin uzerine ek kosullar ekleyebilirsiniz:
