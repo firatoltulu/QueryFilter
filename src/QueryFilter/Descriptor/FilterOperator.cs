@@ -1,6 +1,5 @@
-
 // This source is subject to the GNU General Public License, version 3
-// See https://www.gnu.org/licenses/quick-guide-gplv3.html 
+// See https://www.gnu.org/licenses/quick-guide-gplv3.html
 // All other rights reserved.
 namespace QueryFilter
 {
@@ -12,58 +11,66 @@ namespace QueryFilter
         /// <summary>
         /// Left operand must be smaller than the right one.
         /// </summary>
-        IsLessThan,
+        IsLessThan = 0,
+
         /// <summary>
         /// Left operand must be smaller than or equal to the right one.
         /// </summary>
-        IsLessThanOrEqualTo,
+        IsLessThanOrEqualTo = 1,
+
         /// <summary>
         /// Left operand must be equal to the right one.
         /// </summary>
-        IsEqualTo,
+        IsEqualTo = 2,
+
         /// <summary>
         /// Left operand must be different from the right one.
         /// </summary>
-        IsNotEqualTo,
+        IsNotEqualTo = 3,
+
         /// <summary>
         /// Left operand must be larger than the right one.
         /// </summary>
-        IsGreaterThanOrEqualTo,
+        IsGreaterThanOrEqualTo = 4,
+
         /// <summary>
         /// Left operand must be larger than or equal to the right one.
         /// </summary>
-        IsGreaterThan,
+        IsGreaterThan = 5,
+
         /// <summary>
         /// Left operand must start with the right one.
         /// </summary>
-        StartsWith,
+        StartsWith = 6,
+
         /// <summary>
         /// Left operand must end with the right one.
         /// </summary>
-        EndsWith,
+        EndsWith = 7,
+
         /// <summary>
         /// Left operand must contain the right one.
         /// </summary>
-        Contains,
+        Contains = 8,
+
         /// <summary>
         /// Left operand must be contained in the right one.
         /// </summary>
-        IsContainedIn,
+        IsContainedIn = 9,
 
         /// <summary>
         /// Left operand must not be contained in the right one.
         /// </summary>
-        NotContains,
+        NotContains = 10,
 
-        Beetween,
+        Beetween = 11,
 
-        Count,
+        Count = 12,
 
-        NotStartsWith,
-     
-     
-        NotEndsWith,
+        NotStartsWith = 13,
 
-        NotIsContainedIn
+        NotEndsWith = 14,
+
+        NotIsContainedIn = 15,
     }
 }

@@ -17,7 +17,13 @@ namespace QueryFilter
             AggDescriptors = new List<AggDescriptor>();
             SelectDescriptors = new List<SelectDescriptor>();
             FilterDescriptors = new List<IFilterDescriptor>();
+            JsonbColumns = new List<string>();
+            QueryAdditionals = new List<object>();
+            Current = this;
         }
+
+        // Static reference to the current instance for use in formatters
+        public static QueryFilterModel Current { get; private set; }
 
         public int Skip
         {
@@ -61,16 +67,49 @@ namespace QueryFilter
             set;
         }
 
+        /// <summary>
+        /// List of additional query conditions that can be applied to different providers
+        /// </summary>
+        public List<object> QueryAdditionals { get; set; }
+
+        /// <summary>
+        /// Adds an additional query condition to the QueryFilterModel
+        /// </summary>
+        /// <typeparam name="T">The entity type</typeparam>
+        /// <param name="additional">The additional query condition</param>
+        public void AddQueryAdditional<T>(IQueryAdditional<T> additional) where T : class
+        {
+            QueryAdditionals.Add(additional);
+        }
+
+        /// <summary>
+        /// Gets all additional query conditions for a specific entity type
+        /// </summary>
+        /// <typeparam name="T">The entity type</typeparam>
+        /// <returns>List of IQueryAdditional for the specified type</returns>
+        public List<IQueryAdditional<T>> GetQueryAdditionals<T>() where T : class
+        {
+            return QueryAdditionals
+                .Where(a => a is IQueryAdditional<T>)
+                .Cast<IQueryAdditional<T>>()
+                .ToList();
+        }
+
         public static QueryFilterModel Parse(string queryFilter)
         {
-            if (queryFilter.StartsWith("?"))
-                queryFilter = queryFilter.Substring(1);
-
-            var queries = Uri.UnescapeDataString(HttpUtility.UrlDecode(queryFilter)).Split('&').Where(o => o.StartsWith("$")).Select(dic =>
+            if (queryFilter.StartsWith('?'))
             {
-                var _value = dic.Split('=');
-                return new KeyValuePair<string, string>(_value[0], _value[1]);
-            }).ToDictionary(x => x.Key, x => x.Value);
+                queryFilter = queryFilter.Substring(1);
+            }
+
+            var queries = Uri.UnescapeDataString(HttpUtility.UrlDecode(queryFilter)).Split('&').Where(o => o.StartsWith('$')).Select(dic =>
+            {
+                var value = dic.Split('=');
+                return new KeyValuePair<string, string>(value[0], value[1]);
+            })
+            .GroupBy(x => x.Key)
+            .Select(x => x.First())
+            .ToDictionary(x => x.Key, x => x.Value);
 
             var take = 10;
             var skip = 0;
@@ -84,28 +123,44 @@ namespace QueryFilter
             try
             {
                 if (queries.ContainsKey("$top"))
+                {
                     take = int.Parse(queries["$top"]);
+                }
 
                 if (queries.ContainsKey("$skip"))
+                {
                     skip = int.Parse(queries["$skip"]);
+                }
 
                 if (queries.ContainsKey("$filter"))
-                    filter = queries["$filter"].ToString();
+                {
+                    filter = queries["$filter"];
+                }
 
                 if (queries.ContainsKey("$select"))
-                    select = queries["$select"].ToString();
+                {
+                    select = queries["$select"];
+                }
 
                 if (queries.ContainsKey("$orderby"))
-                    orderby = queries["$orderby"].ToString();
+                {
+                    orderby = queries["$orderby"];
+                }
 
                 if (queries.ContainsKey("$from"))
-                    from = queries["$from"].ToString();
+                {
+                    from = queries["$from"];
+                }
 
                 if (queries.ContainsKey("$groupby"))
-                    groupby = queries["$groupby"].ToString();
+                {
+                    groupby = queries["$groupby"];
+                }
 
                 if (queries.ContainsKey("$aggby"))
-                    agg = queries["$aggby"].ToString();
+                {
+                    agg = queries["$aggby"];
+                }
             }
             catch (Exception)
             {
@@ -115,76 +170,46 @@ namespace QueryFilter
             return Parse(from, skip, take, select, orderby, filter, groupby, agg);
         }
 
-        public static QueryFilterModel Parse(int skip, int top, string orderBy, string filter, string select, string groupBy)
-        {
-            return Parse(string.Empty, skip, top, select, orderBy, filter, groupBy, null);
-        }
+        public static QueryFilterModel Parse(int skip, int top, string orderBy, string filter, string select, string groupBy) => Parse(string.Empty, skip, top, select, orderBy, filter, groupBy, null);
 
-        public static QueryFilterModel Parse(int skip, int top, string orderBy, string filter, string select)
-        {
-            return Parse(string.Empty, skip, top, select, orderBy, filter, null, null);
-        }
+        public static QueryFilterModel Parse(int skip, int top, string orderBy, string filter, string select) => Parse(string.Empty, skip, top, select, orderBy, filter, null, null);
 
-        public static QueryFilterModel Parse(int skip, int top, string orderBy, string filter)
-        {
-            return Parse(string.Empty, skip, top, string.Empty, orderBy, filter, null, null);
-        }
+        public static QueryFilterModel Parse(int skip, int top, string orderBy, string filter) => Parse(string.Empty, skip, top, string.Empty, orderBy, filter, null, null);
 
-        public static QueryFilterModel Parse(string fromBy, int skip, int top)
-        {
-            return Parse(fromBy, skip, top, null, null, null, null, null);
-        }
+        public static QueryFilterModel Parse(string fromBy, int skip, int top) => Parse(fromBy, skip, top, null, null, null, null, null);
 
-        public static QueryFilterModel Parse(string fromBy, int skip, int top, string select)
-        {
-            return Parse(fromBy, skip, top, select, null, null, null, null);
-        }
+        public static QueryFilterModel Parse(string fromBy, int skip, int top, string select) => Parse(fromBy, skip, top, select, null, null, null, null);
 
-        public static QueryFilterModel Parse(string fromBy, int skip, int top, string select, string orderBy)
-        {
-            return Parse(fromBy, skip, top, select, orderBy, null, null, null);
-        }
+        public static QueryFilterModel Parse(string fromBy, int skip, int top, string select, string orderBy) => Parse(fromBy, skip, top, select, orderBy, null, null, null);
 
-        public static QueryFilterModel Parse(string fromBy, int skip, int top, string select, string orderBy, string filter, string groupBy, string agg)
+        public static QueryFilterModel Parse(string fromBy, int skip, int top, string select, string orderBy, string filter, string groupBy, string agg) => new QueryFilterModel
         {
-            QueryFilterModel result = new QueryFilterModel
-            {
-                Skip = skip,
-                Top = top,
-                From = fromBy,
-                SortDescriptors = QueryFilterDescriptorSerializer.Deserialize<SortDescriptor>(orderBy),
-                GroupDescriptors = QueryFilterDescriptorSerializer.Deserialize<GroupDescriptor>(groupBy),
-                SelectDescriptors = QueryFilterDescriptorSerializer.Deserialize<SelectDescriptor>(select),
-                AggDescriptors = QueryFilterDescriptorSerializer.Deserialize<AggDescriptor>(agg),
-                FilterDescriptors = FilterDescriptorFactory.Create(filter)
-            };
-            return result;
-        }
+            Skip = skip,
+            Top = top,
+            From = fromBy,
+            SortDescriptors = QueryFilterDescriptorSerializer.Deserialize<SortDescriptor>(orderBy),
+            GroupDescriptors = QueryFilterDescriptorSerializer.Deserialize<GroupDescriptor>(groupBy),
+            SelectDescriptors = QueryFilterDescriptorSerializer.Deserialize<SelectDescriptor>(select),
+            AggDescriptors = QueryFilterDescriptorSerializer.Deserialize<AggDescriptor>(agg),
+            FilterDescriptors = FilterDescriptorFactory.Create(filter)
+        };
 
         public string From { get; set; }
 
-        public System.Collections.Specialized.NameValueCollection Parameters { get; set; }
-
-        private static string FindQueryKey(List<string> arr, Func<string, bool> find)
-        {
-            string result = string.Empty;
-            var value = arr.FirstOrDefault(find);
-            if (value != null)
-                result = value.Split('=')[1];
-
-            return result;
-        }
+        public NameValueCollection Parameters { get; set; }
 
         public object Clone()
         {
-            var clone = this.MemberwiseClone() as QueryFilterModel;
-            clone.Parameters = new System.Collections.Specialized.NameValueCollection(this.Parameters);
-            clone.SelectDescriptors = this.SelectDescriptors.Select(s => new SelectDescriptor(s.Member)).ToList();
-            clone.SortDescriptors = this.SortDescriptors.Select(s => new SortDescriptor() { Member = s.Member, SortDirection = s.SortDirection }).ToList();
-            clone.GroupDescriptors = this.GroupDescriptors.Select(g => new GroupDescriptor(g.Member)).ToList();
+            var clone = MemberwiseClone() as QueryFilterModel;
+            clone.Parameters = new NameValueCollection(Parameters);
+            clone.SelectDescriptors = SelectDescriptors.Select(s => new SelectDescriptor(s.Member)).ToList();
+            clone.SortDescriptors = SortDescriptors.Select(s => new SortDescriptor() { Member = s.Member, SortDirection = s.SortDirection }).ToList();
+            clone.GroupDescriptors = GroupDescriptors.Select(g => new GroupDescriptor(g.Member)).ToList();
+            clone.JsonbColumns = new List<string>(JsonbColumns);
+            clone.JsonbArrayColumns = new List<string>(JsonbArrayColumns);
 
             clone.FilterDescriptors = new List<IFilterDescriptor>();
-            foreach (var filter in this.FilterDescriptors)
+            foreach (var filter in FilterDescriptors)
             {
                 IFilterDescriptor cloneFilter = null;
                 if (filter is CompositeFilterDescriptor)
@@ -208,13 +233,12 @@ namespace QueryFilter
 
             return clone;
         }
+        public List<string> JsonbColumns { get; set; } = new List<string>();
+        
+        /// <summary>
+        /// List of JSONB columns that contain arrays instead of objects
+        /// </summary>
+        public List<string> JsonbArrayColumns { get; set; } = new List<string>();
 
-        private static NameValueCollection ToNameValueCollection<tValue>(IDictionary<string, tValue> dictionary)
-        {
-            var collection = new NameValueCollection();
-            foreach (var pair in dictionary)
-                collection.Add(pair.Key, pair.Value.ToString());
-            return collection;
-        }
     }
 }

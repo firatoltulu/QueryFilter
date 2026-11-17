@@ -81,7 +81,7 @@ namespace QueryFilter.Test
         [TestCaseSource("_studentLists")]
         public void NumberMember_Filtered_Null_Success(IEnumerable<StudentModel> studentModels)
         {
-            var queryFilterModel = QueryFilterModel.Parse("$filter=NullValue~eq~''");
+            var queryFilterModel = QueryFilterModel.Parse("$filter=NullValue~eq~null");
             var result = studentModels.QueryFilter(queryFilterModel);
             Assert.AreEqual(result.TotalCount, 1);
         }
@@ -166,5 +166,13 @@ namespace QueryFilter.Test
             var result = studentModels.QueryFilter(queryFilterModel);
             Assert.AreEqual(result.TotalCount, 2);
         }
+
+        [TestCaseSource("_studentLists")]
+        public void UseSiblingMemberField_Test_Success(IEnumerable<StudentModel> studentModels)
+        {
+            var queryFilterModel = QueryFilterModel.Parse("$filter=Fields.OrderNumber.keyword~eq~'L591-2461481851'&$orderby=Timestamp-desc");
+             
+        }
+        
     }
 }

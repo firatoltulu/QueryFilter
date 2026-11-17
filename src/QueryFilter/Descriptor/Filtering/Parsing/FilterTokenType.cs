@@ -16,6 +16,7 @@ namespace QueryFilter
         Number,
         String,
         Null,
+        Empty,
         StringUseIgnoreCase,
         Boolean,
         DateTime,

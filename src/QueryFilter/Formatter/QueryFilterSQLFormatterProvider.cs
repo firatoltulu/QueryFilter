@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 
 namespace QueryFilter.Formatter
 {
@@ -12,7 +12,7 @@ namespace QueryFilter.Formatter
                     return new SQLFormatter();
 
                 case QueryFilterSQLFormatterType.Postgres:
-                    return new PostgreSQLFormatter();
+                    return new PostgreSqlFormatter();
 
                 default:
                     throw new ApplicationException($"Not supported data provider name: '{queryFilterSQLFormatterType}'");

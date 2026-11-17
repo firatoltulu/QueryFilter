@@ -1,6 +1,5 @@
-
 // This source is subject to the GNU General Public License, version 3
-// See https://www.gnu.org/licenses/quick-guide-gplv3.html 
+// See https://www.gnu.org/licenses/quick-guide-gplv3.html
 // All other rights reserved.
 
 namespace QueryFilter
@@ -9,7 +8,7 @@ namespace QueryFilter
 
     public static class FilterTokenExtensions
     {
-        private static readonly IDictionary<string, FilterOperator> tokenToOperator = new Dictionary<string, FilterOperator>
+        private static readonly IDictionary<string, FilterOperator> TokenToOperator = new Dictionary<string, FilterOperator>
         {
             { "eq", FilterOperator.IsEqualTo },
             { "ne", FilterOperator.IsNotEqualTo },
@@ -26,10 +25,9 @@ namespace QueryFilter
             { "notendswith", FilterOperator.NotEndsWith },
             { "notin", FilterOperator.NotIsContainedIn },
             { "notstartswith", FilterOperator.NotStartsWith },
-
         };
 
-        private static readonly IDictionary<FilterOperator, string> operatorToToken = new Dictionary<FilterOperator, string>
+        private static readonly IDictionary<FilterOperator, string> OperatorToToken = new Dictionary<FilterOperator, string>
         {
             { FilterOperator.IsEqualTo, "eq" },
             { FilterOperator.IsNotEqualTo, "ne" },
@@ -48,14 +46,8 @@ namespace QueryFilter
             { FilterOperator.NotIsContainedIn, "notin" },
         };
 
-        public static FilterOperator ToFilterOperator(this FilterToken token)
-        {
-            return tokenToOperator[token.Value];
-        }
+        public static FilterOperator ToFilterOperator(this FilterToken token) => TokenToOperator[token.Value];
 
-        public static string ToToken(this FilterOperator filterOperator)
-        {
-            return operatorToToken[filterOperator];
-        }
+        public static string ToToken(this FilterOperator filterOperator) => OperatorToToken[filterOperator];
     }
 }
