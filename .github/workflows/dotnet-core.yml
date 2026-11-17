@@ -24,8 +24,10 @@ jobs:
     - name: Test
       run: dotnet test ./src --no-restore --verbosity normal
     - name: publish on version change
+      if: github.event_name == 'push'
       run: dotnet pack ./src/QueryFilter/QueryFilter.csproj --configuration Release --no-build --output bin/Release/Publish
     - name: Publish to Nuget
+      if: github.event_name == 'push'
       run: dotnet nuget push bin/Release/Publish/**/*.nupkg --skip-duplicate --api-key ${{ secrets.NUGET_API_KEY }} --source https://api.nuget.org/v3/index.json
    
     
